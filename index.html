@@ -1,591 +1,446 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="BTC Margin">
-<meta name="theme-color" content="#070b08">
-<title>BTC Margin Terminal</title>
+<meta name="apple-mobile-web-app-title" content="BTC dag">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta name="theme-color" content="#E9EDF1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#161C23" media="(prefers-color-scheme: dark)">
+<title>BTC dagkaart</title>
 <style>
-  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html { -webkit-text-size-adjust: 100%; }
-  body {
-    margin: 0;
-    min-height: 100vh;
-    min-height: 100dvh;
-    background: #070b08;
-    color: #c9e6d3;
-    font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", "Courier New", monospace;
-    padding: 16px 12px 32px;
-    padding-top: max(16px, env(safe-area-inset-top));
-    padding-bottom: max(32px, env(safe-area-inset-bottom));
-    padding-left: max(12px, env(safe-area-inset-left));
-    padding-right: max(12px, env(safe-area-inset-right));
+:root{
+  color-scheme: light;
+  --bg:#E9EDF1; --surface:#F6F8FA; --ink:#1B2631; --muted:#5F6B78; --line:#C9D1D9;
+  --buy:#17795A; --sell:#A62F3C; --hold:#2F5E9E; --wait:#6A7480; --warn:#9A6A08;
+  --buy-soft:#D6EDE4; --sell-soft:#F3DADD; --hold-soft:#DCE6F4; --wait-soft:#E2E6EA;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --bg:#161C23; --surface:#1E262F; --ink:#E6EBF0; --muted:#97A3AF; --line:#334150;
+    --buy:#4CC79A; --sell:#EF7A86; --hold:#7FA8E6; --wait:#9AA5B1; --warn:#E2B04A;
+    --buy-soft:#173A2F; --sell-soft:#3F2228; --hold-soft:#1F3049; --wait-soft:#28313B;
   }
-  .wrap { max-width: 960px; margin: 0 auto; }
-  .panel { border: 1px solid #1e3327; margin-bottom: 12px; }
-  .header { padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
-  .ticker-label { color: #ffb000; font-size: 12px; letter-spacing: 2px; }
-  .price { font-size: 22px; font-weight: 700; }
-  .cursor { color: #33ff99; margin-left: 6px; }
-  .meta { font-size: 10.5px; color: #5a7a63; }
-  .intervals { display: flex; gap: 6px; margin: 0 0 10px; flex-wrap: wrap; }
-  button {
-    background: transparent; color: #5a7a63; border: 1px solid #1e3327;
-    padding: 9px 14px; font-family: inherit; font-size: 13px; cursor: pointer; min-height: 38px;
-  }
-  button.active { background: #153322; color: #33ff99; }
-  button.primary { color: #c9e6d3; border-color: #2c4a38; }
-  button.long { color: #33ff99; border-color: #1f5c3a; }
-  button.short { color: #ff6b6b; border-color: #5c1f1f; }
-  .error { border: 1px solid #ff4d4d; color: #ff4d4d; padding: 12px; font-size: 12px; margin-bottom: 10px; display: none; }
-  .badge { padding: 18px 14px; text-align: center; background: #0c130e; }
-  .badge-label { font-size: 10.5px; color: #5a7a63; letter-spacing: 3px; margin-bottom: 6px; }
-  .badge-signal { font-size: 28px; font-weight: 800; letter-spacing: 1px; line-height: 1.2; }
-  .badge-sub { font-size: 12px; margin-top: 8px; color: #c9e6d3; line-height: 1.5; }
-  .badge-add { font-size: 11px; margin-top: 6px; color: #5a7a63; }
-  .section { padding: 14px; font-size: 12px; line-height: 1.7; }
-  .label { color: #5a7a63; letter-spacing: 2px; margin-bottom: 8px; font-size: 11px; }
-  table.tf { width: 100%; border-collapse: collapse; font-size: 13px; }
-  table.tf td, table.tf th { padding: 6px 4px; text-align: left; border-bottom: 1px solid #13221a; }
-  table.tf th { color: #5a7a63; font-weight: 400; font-size: 11px; }
-  .k { color: #33ff99; } .v { color: #ff4d4d; } .n { color: #ffb000; }
-  .warn { color: #ff4d4d; }
-  .muted { color: #5a7a63; }
-  .formgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-  .formgrid label { font-size: 11px; color: #5a7a63; display: flex; flex-direction: column; gap: 4px; }
-  input[type=number], select {
-    background: #0c130e; color: #c9e6d3; border: 1px solid #1e3327; width: 100%;
-    padding: 8px 10px; font-family: inherit; font-size: 16px; min-height: 38px; border-radius: 0;
-  }
-  .btnrow { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
-  .scroll { overflow-x: auto; }
-  #grid { display: grid; grid-template-columns: 70px repeat(9, minmax(26px, 1fr)); gap: 2px; font-size: 11px; min-width: 330px; }
-  #grid div { display: flex; align-items: center; justify-content: center; min-height: 28px; }
-  #grid .hd { color: #5a7a63; }
-  #grid .me { outline: 2px solid #ffffff; outline-offset: -2px; }
-  .legend { font-size: 10.5px; color: #5a7a63; display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
-  .chartbox { padding: 8px; }
-  svg { display: block; width: 100%; height: auto; }
-  .disclaimer { font-size: 10px; color: #3f5b48; margin-top: 16px; line-height: 1.6; }
-  @media (max-width: 480px) {
-    body { padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right)); }
-    .price { font-size: 19px; }
-    .badge-signal { font-size: 23px; }
-    .intervals button { flex: 1 1 auto; text-align: center; }
-  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --bg:#161C23; --surface:#1E262F; --ink:#E6EBF0; --muted:#97A3AF; --line:#334150;
+  --buy:#4CC79A; --sell:#EF7A86; --hold:#7FA8E6; --wait:#9AA5B1; --warn:#E2B04A;
+  --buy-soft:#173A2F; --sell-soft:#3F2228; --hold-soft:#1F3049; --wait-soft:#28313B;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:16px; line-height:1.45; -webkit-text-size-adjust:100%;
+  font-variant-numeric:tabular-nums;
+}
+main{max-width:560px; margin:0 auto; padding:16px 18px 40px}
+header{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:8px 0 18px}
+h1{font-size:1.15rem; font-weight:650; margin:0; letter-spacing:-.01em}
+.sub{color:var(--muted); font-size:.85rem}
+button{
+  font:inherit; font-size:.9rem; color:var(--ink); background:var(--surface);
+  border:1px solid var(--line); border-radius:999px; padding:7px 14px; cursor:pointer;
+}
+button:focus-visible{outline:2px solid var(--hold); outline-offset:2px}
+button:active{transform:translateY(1px)}
+
+/* Advice */
+#advice{border-radius:22px; padding:22px 20px 20px; background:var(--wait-soft); transition:background .3s}
+#advice[data-k="KOPEN"]{background:var(--buy-soft)}
+#advice[data-k="VERKOPEN"]{background:var(--sell-soft)}
+#advice[data-k="VASTHOUDEN"]{background:var(--hold-soft)}
+#adviceWord{font-size:clamp(2.6rem,13vw,3.6rem); font-weight:800; letter-spacing:-.035em; line-height:1; margin:0 0 10px; color:var(--wait)}
+#advice[data-k="KOPEN"] #adviceWord{color:var(--buy)}
+#advice[data-k="VERKOPEN"] #adviceWord{color:var(--sell)}
+#advice[data-k="VASTHOUDEN"] #adviceWord{color:var(--hold)}
+#adviceWhy{margin:0; font-size:1rem}
+#adviceRisk{margin:12px 0 0; font-size:.88rem; color:var(--muted)}
+#adviceRisk.warn{color:var(--warn); font-weight:600}
+
+/* Ruler (the channel) */
+.ruler{margin:26px 2px 6px}
+.track{position:relative; height:44px}
+.bar{position:absolute; left:0; right:0; top:19px; height:6px; border-radius:3px;
+  background:linear-gradient(90deg,var(--sell) 0,var(--line) 18%,var(--line) 82%,var(--buy) 100%)}
+.pin{position:absolute; top:6px; width:0; height:32px}
+.pin::before{content:""; position:absolute; left:-9px; top:7px; width:18px; height:18px; border-radius:50%;
+  background:var(--ink); border:3px solid var(--bg)}
+.pin span{position:absolute; bottom:36px; transform:translateX(-50%); white-space:nowrap; font-size:.8rem; font-weight:650}
+.ends{display:flex; justify-content:space-between; gap:12px; font-size:.82rem; color:var(--muted)}
+.ends b{display:block; color:var(--ink); font-size:.95rem; font-weight:650}
+.ends .r{text-align:right}
+#toLevel{margin:12px 0 0; font-size:.92rem}
+#preview{margin:6px 0 0; font-size:.86rem; color:var(--muted)}
+
+section{margin-top:30px}
+h2{font-size:1rem; font-weight:650; margin:0 0 10px}
+.rows{background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden}
+.row{display:flex; justify-content:space-between; gap:12px; padding:11px 14px; border-top:1px solid var(--line); font-size:.93rem}
+.row:first-child{border-top:0}
+.row .k{color:var(--muted)}
+.row .v{font-weight:600; text-align:right}
+.pos{color:var(--buy)} .neg{color:var(--sell)}
+.note{font-size:.84rem; color:var(--muted); margin:8px 2px 0}
+
+.chartwrap{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:10px 8px 6px; overflow:hidden}
+svg{display:block; width:100%; height:auto}
+.legend{display:flex; flex-wrap:wrap; gap:4px 14px; font-size:.78rem; color:var(--muted); padding:6px 6px 2px}
+.legend i{display:inline-block; width:14px; height:3px; border-radius:2px; vertical-align:middle; margin-right:5px}
+
+table{width:100%; border-collapse:collapse; font-size:.85rem}
+th,td{padding:8px 10px; text-align:left; border-top:1px solid var(--line)}
+th{color:var(--muted); font-weight:500; border-top:0}
+td.n,th.n{text-align:right}
+.logwrap{background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow-x:auto}
+.actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
+details{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:12px 14px}
+summary{cursor:pointer; font-weight:600}
+details p{margin:10px 0 0; font-size:.92rem}
+#err{display:none; margin-top:14px; padding:12px 14px; border-radius:12px; background:var(--sell-soft); color:var(--ink); font-size:.9rem}
+.tag{display:inline-block; font-size:.75rem; padding:2px 8px; border-radius:999px; background:var(--wait-soft); color:var(--muted); font-weight:600}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
 </style>
 </head>
 <body>
-<div class="wrap">
-
-  <div class="panel header">
-    <div style="display:flex; align-items:baseline;">
-      <span class="ticker-label">BTC/EUR · MARGIN</span>
-      <span class="price" id="price" style="margin-left:10px;">----</span>
-      <span class="cursor" id="cursor">█</span>
+<main>
+  <header>
+    <div>
+      <h1>BTC dagkaart</h1>
+      <div class="sub" id="stamp">Gegevens laden…</div>
     </div>
-    <div class="meta" id="meta">verbinden...</div>
+    <button id="refresh" type="button">Ververs</button>
+  </header>
+
+  <div id="advice" data-k="">
+    <p id="adviceWord">…</p>
+    <p id="adviceWhy">De dagcandles worden opgehaald.</p>
+    <p id="adviceRisk"></p>
   </div>
 
-  <div class="error" id="error"></div>
-
-  <div class="panel badge" id="badge">
-    <div class="badge-label" id="badgeLabel">ADVIES</div>
-    <div class="badge-signal" id="advice" style="color:#ffb000;">LADEN...</div>
-    <div class="badge-sub" id="adviceSub"></div>
-    <div class="badge-add" id="adviceAdd"></div>
-  </div>
-
-  <div class="panel section">
-    <div class="label">SIGNALEN PER TIMEFRAME</div>
-    <table class="tf">
-      <thead><tr><th>TF</th><th>Signaal</th><th>Trend</th><th>RSI</th></tr></thead>
-      <tbody id="tfBody"><tr><td colspan="4" class="muted">laden...</td></tr></tbody>
-    </table>
-  </div>
-
-  <div class="panel section">
-    <div class="label">JOUW POSITIE</div>
-    <div id="posBody"></div>
-    <div class="btnrow" id="posActions"></div>
-    <div id="posForm"></div>
-  </div>
-
-  <div class="panel section">
-    <div class="label" id="matrixLabel">BESLISMATRIX</div>
-    <div class="intervals" id="matrixToggle"></div>
-    <div class="scroll"><div id="grid"></div></div>
-    <div class="legend" id="matrixLegend"></div>
-  </div>
-
-  <div class="intervals" id="intervals">
-    <button data-iv="15m">15m</button>
-    <button data-iv="1h" class="active">1u</button>
-    <button data-iv="4h">4u</button>
-    <button data-iv="1d">1d</button>
-    <button id="refreshBtn">↻ ververs</button>
-  </div>
-
-  <div class="panel chartbox">
-    <svg id="chart" viewBox="0 0 900 320" width="100%"></svg>
-    <div class="legend">
-      <span style="color:#ffb000;">── EMA9</span>
-      <span style="color:#7fb3ff;">── EMA21</span>
-      <span style="color:#ff6b6b;">- - stop</span>
-      <span style="color:#c9e6d3;">- - instap</span>
-      <span id="rsiLabel">RSI(14): -</span>
+  <div class="ruler" aria-label="Koers tussen verkoop- en koopniveau">
+    <div class="track"><div class="bar"></div><div class="pin" id="pin"><span id="pinLabel"></span></div></div>
+    <div class="ends">
+      <div>Verkoopniveau<b id="lvlSell">–</b><span>laagste slot 20 dagen</span></div>
+      <div class="r">Koopniveau<b id="lvlBuy">–</b><span>hoogste slot 55 dagen</span></div>
     </div>
-    <svg id="volumeChart" viewBox="0 0 900 70" width="100%" style="margin-top:8px;"></svg>
-    <div class="legend"><span>Volume · stippellijn = 20-candle gemiddelde</span></div>
+    <p id="toLevel"></p>
+    <p id="preview"></p>
   </div>
 
-  <div class="panel section">
-    <div class="label" id="reasonLabel">REDENERING</div>
-    <div id="reasons"></div>
-  </div>
+  <div id="err"></div>
 
-  <div class="disclaimer">
-    Puur technisch (EMA9/EMA21-kruising + RSI14 + volume, per timeframe bevestigd door de hogere timeframe),
-    gecombineerd met je eigen beslismatrix. De liquidatieprijs is een grove schatting zonder onderhoudsmarge,
-    fees en funding; de echte liquidatie ligt dichter bij je instap. Kijk altijd op je exchange.
-    Geen financieel advies. Margin vergroot winst én verlies; je kunt je hele inleg verliezen.
-  </div>
 
-</div>
+  <section>
+    <h2>Tweede mening</h2>
+    <div class="rows">
+      <div class="row"><span class="k">EMA9/21 op de dagkaart</span><span class="v" id="emaState">–</span></div>
+      <div class="row"><span class="k">Eens met het advies?</span><span class="v" id="emaAgree">–</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Lopende trade volgens de regel</h2>
+    <div class="rows" id="tradeRows">
+      <div class="row"><span class="k">Status</span><span class="v">–</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Laatste 150 dagen</h2>
+    <div class="chartwrap">
+      <svg id="chart" viewBox="0 0 360 190" role="img" aria-label="Koersgrafiek met koop- en verkoopniveau"></svg>
+      <div class="legend">
+        <span><i style="background:var(--ink)"></i>Slotkoers</span>
+        <span><i style="background:var(--buy)"></i>Koopniveau</span>
+        <span><i style="background:var(--sell)"></i>Verkoopniveau</span>
+        <span>▲ koop · ▼ verkoop</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Hoe de regel het deed</h2>
+    <div class="rows" id="trackRows"><div class="row"><span class="k">Bezig met rekenen</span><span class="v">–</span></div></div>
+    <p class="note" id="trackNote"></p>
+  </section>
+
+  <section>
+    <h2>Schaduwlog</h2>
+    <div class="rows" id="shadowRows"><div class="row"><span class="k">Nog geen gegevens</span><span class="v">–</span></div></div>
+    <p class="note">De app schrijft elke afgesloten dag op wat beide regels zeiden. Je hoeft niets te doen. Leg het naast je andere apps om te zien welke aanpak beter uitpakt.</p>
+    <div class="logwrap" style="margin-top:10px"><table id="logTable"><thead><tr><th>Dag</th><th class="n">Slot</th><th>Doorbraak</th><th>EMA dag</th></tr></thead><tbody></tbody></table></div>
+    <div class="actions">
+      <button type="button" id="copyLog">Kopieer log</button>
+      <button type="button" id="resetLog">Wis log</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Zo werkt het</h2>
+    <details>
+      <summary>De regels</summary>
+      <p><b>Kopen</b> als BTC op een dag sluit op het hoogste slot van de laatste 55 dagen.</p>
+      <p><b>Verkopen</b> als BTC sluit op het laagste slot van de laatste 20 dagen.</p>
+      <p>Daartussen houd je vast of doe je niets. Er wordt niet geshort en niet met hefboom gewerkt. In de test vanaf 2018 waren shorts en hefboom de grootste verliesposten.</p>
+      <p>Een dag sluit om 00:00 UTC, dat is 01:00 (winter) of 02:00 (zomer) Nederlandse tijd. Het advies geldt dan voor de hele dag. Eén keer per dag kijken is genoeg.</p>
+      <p>Verwacht weinig trades, ongeveer 3 per jaar, en dat de regel vaker fout dan goed zit. De winst komt uit de paar grote trends. Dalingen van 30% of meer zijn in het verleden voorgekomen, ook met deze regel.</p>
+      <p>Tip: plaats een limietorder in plaats van een marktorder, dan betaal je bij Bitvavo de lagere makerfee.</p>
+    </details>
+  </section>
+</main>
 
 <script>
-const IVS = ["15m", "1h", "4h", "1d"];
-const KRAKEN_MINUTES = { "15m": 15, "1h": 60, "4h": 240, "1d": 1440 };
-const IV_LABEL = { "15m": "15M", "1h": "1U", "4h": "4U", "1d": "1D" };
-const PARENT = { "15m": "1h", "1h": "4h", "4h": "1d", "1d": null };
-const POS_KEY = "btc_margin_position";
-const COIN = { binance: "BTCEUR", kraken: "XBTEUR" };
-
-let state = {
-  data: {}, source: null, lastUpdate: null,
-  chartIv: "1h", pos: loadPos(), formOpen: false, matrixView: "long", timer: null
-};
-
-function fmt(n) { return n.toLocaleString("nl-NL", { maximumFractionDigits: 0 }); }
-function pct(n) { return (n >= 0 ? "+" : "") + n.toFixed(2) + "%"; }
-
-/* ---------- positie ---------- */
-function loadPos() {
-  try { const r = localStorage.getItem(POS_KEY); return r ? JSON.parse(r) : null; } catch (e) { return null; }
-}
-function storePos(p) {
-  try { if (p) localStorage.setItem(POS_KEY, JSON.stringify(p)); else localStorage.removeItem(POS_KEY); } catch (e) {}
-  state.pos = p;
-}
-function quickOpen(side) {
-  const price = currentPrice();
-  if (!price) return;
-  storePos({ side, entry: price, stop: null, lev: 1, date: new Date().toISOString() });
-  state.formOpen = true; // direct stop invullen
-  render();
-}
-function closePos() {
-  if (!confirm("Positie als gesloten markeren?")) return;
-  storePos(null); state.formOpen = false; render();
-}
-function toggleForm() { state.formOpen = !state.formOpen; render(); }
-function saveForm() {
-  const side = document.getElementById("fSide").value;
-  const entry = parseFloat(document.getElementById("fEntry").value);
-  const stopRaw = parseFloat(document.getElementById("fStop").value);
-  const lev = parseFloat(document.getElementById("fLev").value) || 1;
-  if (!entry || entry <= 0) { alert("Vul een geldige instapprijs in."); return; }
-  const stop = stopRaw > 0 ? stopRaw : null;
-  if (stop && side === "long" && stop >= entry) { alert("Bij een long ligt de stop onder je instapprijs."); return; }
-  if (stop && side === "short" && stop <= entry) { alert("Bij een short ligt de stop boven je instapprijs."); return; }
-  const prev = state.pos;
-  storePos({ side, entry, stop, lev, date: prev ? prev.date : new Date().toISOString() });
-  state.formOpen = false; render();
-}
-function liqPrice(p) {
-  if (!p || !p.lev || p.lev <= 1) return null;
-  return p.side === "long" ? p.entry * (1 - 1 / p.lev) : p.entry * (1 + 1 / p.lev);
-}
-
-/* ---------- indicatoren ---------- */
-function calcEMA(values, period) {
-  const k = 2 / (period + 1), ema = [];
-  values.forEach((v, i) => ema.push(i === 0 ? v : v * k + ema[i - 1] * (1 - k)));
-  return ema;
-}
-function calcRSI(values, period = 14) {
-  const rsi = new Array(values.length).fill(null);
-  if (values.length <= period) return rsi;
-  let gains = 0, losses = 0;
-  for (let i = 1; i <= period; i++) { const d = values[i] - values[i - 1]; if (d >= 0) gains += d; else losses -= d; }
-  let ag = gains / period, al = losses / period;
-  rsi[period] = 100 - 100 / (1 + (al === 0 ? 100 : ag / al));
-  for (let i = period + 1; i < values.length; i++) {
-    const d = values[i] - values[i - 1];
-    ag = (ag * (period - 1) + (d > 0 ? d : 0)) / period;
-    al = (al * (period - 1) + (d < 0 ? -d : 0)) / period;
-    rsi[i] = 100 - 100 / (1 + (al === 0 ? 100 : ag / al));
-  }
-  return rsi;
-}
+(function(){
+"use strict";
+var BUY_N=55, SELL_N=20, COST=0.003;
+var LOG_KEY="btcdag_log", START_KEY="btcdag_start";
+var eur=new Intl.NumberFormat("nl-NL",{style:"currency",currency:"EUR",maximumFractionDigits:0});
+var pct=function(x,d){ if(x==null||!isFinite(x)) return "–"; var s=(x*100).toFixed(d==null?1:d).replace(".",","); return (x>0?"+":"")+s+"%"; };
+var $=function(id){return document.getElementById(id)};
+function dstr(t){ var d=new Date(t); return d.toLocaleDateString("nl-NL",{day:"numeric",month:"short",year:"numeric",timeZone:"UTC"}); }
+function dkey(t){ return new Date(t).toISOString().slice(0,10); }
 
 /* ---------- data ---------- */
-async function fetchFromBinance(iv) {
-  const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${COIN.binance}&interval=${iv}&limit=120`);
-  if (!res.ok) throw new Error(`Binance HTTP ${res.status}`);
-  const raw = await res.json();
-  if (!Array.isArray(raw) || !raw.length) throw new Error("Binance: lege response");
-  return raw.map(k => ({ time: k[0], open: +k[1], high: +k[2], low: +k[3], close: +k[4], volume: +k[5] }));
+function fetchJSON(url){
+  return fetch(url,{cache:"no-store"}).then(function(r){ if(!r.ok) throw new Error(url+" gaf status "+r.status); return r.json(); });
 }
-async function fetchFromKraken(iv) {
-  const res = await fetch(`https://api.kraken.com/0/public/OHLC?pair=${COIN.kraken}&interval=${KRAKEN_MINUTES[iv]}`);
-  if (!res.ok) throw new Error(`Kraken HTTP ${res.status}`);
-  const data = await res.json();
-  if (data.error && data.error.length) throw new Error("Kraken: " + data.error.join("; "));
-  const key = Object.keys(data.result || {}).find(k => k !== "last");
-  if (!key) throw new Error("Kraken: geen candle-data");
-  return data.result[key].slice(-120).map(k => ({ time: k[0] * 1000, open: +k[1], high: +k[2], low: +k[3], close: +k[4], volume: +k[6] }));
-}
-async function fetchOHLC(iv) {
-  const errs = [];
-  try { return { candles: await fetchFromBinance(iv), source: "Binance" }; } catch (e) { errs.push(e.message); }
-  try { return { candles: await fetchFromKraken(iv), source: "Kraken" }; } catch (e) { errs.push(e.message); }
-  throw new Error(errs.join(" | "));
-}
-async function fetchAll() {
-  document.getElementById("error").style.display = "none";
-  const results = await Promise.allSettled(IVS.map(iv => fetchOHLC(iv)));
-  const failed = [];
-  results.forEach((r, i) => {
-    if (r.status === "fulfilled") { state.data[IVS[i]] = r.value.candles; state.source = r.value.source; }
-    else failed.push(IV_LABEL[IVS[i]]);
+function loadBinance(){
+  return fetchJSON("https://api.binance.com/api/v3/klines?symbol=BTCEUR&interval=1d&limit=1000").then(function(a){
+    if(!Array.isArray(a)||a.length<BUY_N+5) throw new Error("Binance gaf te weinig candles");
+    return {src:"Binance",c:a.map(function(k){return {t:k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4]};})};
   });
-  if (failed.length) {
-    const el = document.getElementById("error");
-    el.style.display = "block";
-    el.textContent = `Kon geen live candles ophalen voor ${failed.join(", ")} bij Binance of Kraken. De matrix is pas betrouwbaar als alle vier de timeframes geladen zijn. Check je verbinding of tik op ververs.`;
-  }
-  if (failed.length < IVS.length) state.lastUpdate = new Date();
-  render();
+}
+function loadKraken(){
+  return fetchJSON("https://api.kraken.com/0/public/OHLC?pair=XBTEUR&interval=1440").then(function(j){
+    if(j.error&&j.error.length) throw new Error("Kraken: "+j.error.join(", "));
+    var key=Object.keys(j.result).filter(function(k){return k!=="last";})[0];
+    var a=j.result[key];
+    return {src:"Kraken",c:a.map(function(k){return {t:k[0]*1000,o:+k[1],h:+k[2],l:+k[3],c:+k[4]};})};
+  });
 }
 
-/* ---------- signaal per timeframe ---------- */
-function computeSignal(candles) {
-  if (!candles || candles.length <= 25) return null;
-  const closes = candles.map(c => c.close);
-  const ema9 = calcEMA(closes, 9), ema21 = calcEMA(closes, 21), rsi = calcRSI(closes, 14);
-  const n = closes.length - 1, lastRSI = rsi[n];
-  const diffNow = ema9[n] - ema21[n], diffPrev = ema9[n - 1] - ema21[n - 1];
-  const crossUp = diffPrev <= 0 && diffNow > 0, crossDown = diffPrev >= 0 && diffNow < 0;
-  const last = candles[n];
-  const vols = candles.map(c => c.volume || 0);
-  const win = vols.slice(Math.max(0, n - 20), n);
-  const avgVol = win.length ? win.reduce((a, b) => a + b, 0) / win.length : 0;
-  const volOk = avgVol > 0 ? vols[n] > avgVol * 1.1 : true;
-  let signal = "N", reasons = [];
-  if (crossUp && lastRSI < 70) {
-    if (volOk) {
-      signal = "K";
-      reasons.push("EMA9 kruist opwaarts door EMA21 — trendwissel naar boven");
-      reasons.push(`RSI(14) = ${lastRSI.toFixed(1)} — nog geen overbought`);
-      reasons.push(`Volume bevestigt (${(vols[n] / avgVol).toFixed(1)}x het 20-candle gemiddelde)`);
-      if (last.close > last.open) reasons.push("Laatste candle is bullish");
-    } else {
-      reasons.push("EMA9 kruist opwaarts door EMA21, maar volume bevestigt nog niet");
-      reasons.push(`RSI(14) = ${lastRSI.toFixed(1)}`);
-    }
-  } else if (crossDown && lastRSI > 30) {
-    if (volOk) {
-      signal = "V";
-      reasons.push("EMA9 kruist neerwaarts door EMA21 — trendwissel naar beneden");
-      reasons.push(`RSI(14) = ${lastRSI.toFixed(1)} — nog geen oversold`);
-      reasons.push(`Volume bevestigt (${(vols[n] / avgVol).toFixed(1)}x het 20-candle gemiddelde)`);
-      if (last.close < last.open) reasons.push("Laatste candle is bearish");
-    } else {
-      reasons.push("EMA9 kruist neerwaarts door EMA21, maar volume bevestigt nog niet");
-      reasons.push(`RSI(14) = ${lastRSI.toFixed(1)}`);
-    }
-  } else {
-    reasons.push("Geen recente EMA9/EMA21-kruising op de laatste candle");
-    reasons.push(`RSI(14) = ${lastRSI.toFixed(1)}`);
+/* ---------- rules (pure) ---------- */
+function ema(arr,n){ var k=2/(n+1), out=[], e=arr[0]; for(var i=0;i<arr.length;i++){ e=i?arr[i]*k+e*(1-k):arr[i]; out.push(e);} return out; }
+function donchianStates(cl){
+  var st=[], cur=0;
+  for(var i=0;i<cl.length;i++){
+    if(i<BUY_N-1){ st.push(null); continue; }
+    var hi=-Infinity, lo=Infinity;
+    for(var j=i-BUY_N+1;j<=i;j++) if(cl[j]>hi) hi=cl[j];
+    for(j=i-SELL_N+1;j<=i;j++) if(cl[j]<lo) lo=cl[j];
+    if(cur===0 && cl[i]>=hi) cur=1;
+    else if(cur===1 && cl[i]<=lo) cur=0;
+    st.push(cur);
   }
-  const trendUp = diffNow > 0;
-  reasons.push(trendUp ? "Trend: EMA9 boven EMA21 (opwaarts)" : "Trend: EMA9 onder EMA21 (neerwaarts)");
-  return { signal, reasons, rsi: lastRSI, trend: trendUp ? "up" : "dn", ema9, ema21 };
+  return st;
 }
-function analyze(iv) {
-  const r = computeSignal(state.data[iv]);
-  if (!r) return null;
-  const p = PARENT[iv];
-  if (!p || r.signal === "N") return r;
-  const pc = state.data[p];
-  if (!pc || pc.length < 25) { r.reasons.push(`Hogere timeframe (${IV_LABEL[p]}) niet beschikbaar — bevestiging overgeslagen`); return r; }
-  const cl = pc.map(c => c.close), e9 = calcEMA(cl, 9), e21 = calcEMA(cl, 21), np = cl.length - 1;
-  const pUp = e9[np] > e21[np];
-  if (r.signal === "K" && !pUp) { r.reasons.push(`Onderdrukt: trend op ${IV_LABEL[p]} is nog niet opwaarts`); r.signal = "N"; }
-  else if (r.signal === "V" && pUp) { r.reasons.push(`Onderdrukt: trend op ${IV_LABEL[p]} is nog niet neerwaarts`); r.signal = "N"; }
-  else r.reasons.push(`Bevestigd door hogere timeframe ${IV_LABEL[p]}`);
-  return r;
+function emaStates(cl){ var a=ema(cl,9), b=ema(cl,21); return cl.map(function(_,i){ return i<21?null:(a[i]>b[i]?1:0); }); }
+function levels(cl){ // levels that apply to the NEXT close
+  var n=cl.length, hi=-Infinity, lo=Infinity;
+  for(var j=n-(BUY_N-1);j<n;j++) if(cl[j]>hi) hi=cl[j];
+  for(j=n-(SELL_N-1);j<n;j++) if(cl[j]<lo) lo=cl[j];
+  return {buy:hi,sell:lo};
 }
-function currentPrice() {
-  const c = state.data["15m"] || state.data["1h"];
-  return c && c.length ? c[c.length - 1].close : 0;
-}
-
-/* ---------- beslismatrix ---------- */
-const S = ["K", "N", "V"];
-const FLIP = { K: "V", N: "N", V: "K" };
-const TFLIP = { up: "dn", dn: "up" };
-function baseLong(m15, h1, h4, d1) {
-  if (h1 === "V") return (h4 === "K" && d1 !== "V") ? "P" : "X";
-  if (h4 === "V" && d1 === "V") return h1 === "N" ? "P" : "T";
-  if (h4 === "V" || d1 === "V") return "T";
-  if (m15 === "V") return "W";
-  return "H";
-}
-function actLong(m15, h1, h4, d1, t) {
-  const b = baseLong(m15, h1, h4, d1);
-  if (b !== "H" && b !== "W") return b;
-  const a = t.h1 === "dn", c = t.h4 === "dn", d = t.d1 === "dn";
-  if ((a && c) || (c && d)) return "T";
-  if (a || c || d) return "W";
-  return b;
-}
-function act(side, m15, h1, h4, d1, t) {
-  if (side === "long") return actLong(m15, h1, h4, d1, t);
-  return actLong(FLIP[m15], FLIP[h1], FLIP[h4], FLIP[d1], { h1: TFLIP[t.h1], h4: TFLIP[t.h4], d1: TFLIP[t.d1] });
-}
-const CODES = {
-  H: { c: "H", col: "#33ff99", bg: "#10301d" },
-  W: { c: "H!", col: "#33ff99", bg: "#10301d" },
-  T: { c: "S", col: "#ffb000", bg: "#33280a" },
-  P: { c: "½", col: "#ff9a4d", bg: "#3a1f0c" },
-  X: { c: "X", col: "#ff4d4d", bg: "#3a1010" }
-};
-const TEXT = {
-  long: {
-    H: ["LONG VASTHOUDEN", "Niets doen, positie aanhouden."],
-    W: ["LONG VASTHOUDEN", "Nog geen actie, maar kijk vaker."],
-    T: ["STOP OMHOOG", "Zet je stop dichter onder de huidige koers."],
-    P: ["HELFT SLUITEN", "Verkoop de helft van je long, stop omhoog voor de rest."],
-    X: ["LONG SLUITEN", "Sluit de hele positie."]
-  },
-  short: {
-    H: ["SHORT VASTHOUDEN", "Niets doen, positie aanhouden."],
-    W: ["SHORT VASTHOUDEN", "Nog geen actie, maar kijk vaker."],
-    T: ["STOP OMLAAG", "Zet je stop dichter boven de huidige koers."],
-    P: ["HELFT SLUITEN", "Koop de helft van je short terug, stop omlaag voor de rest."],
-    X: ["SHORT SLUITEN", "Koop de hele positie terug."]
+function simulate(cl,st,from){ // returns equity stats with costs
+  var eq=1, peak=1, dd=0, trades=[], cur=0, ep=0, hold0=cl[from];
+  for(var i=from+1;i<cl.length;i++){
+    var p=st[i-1]||0;
+    if(p) eq*=cl[i]/cl[i-1];
+    var nx=st[i]||0;
+    if(nx!==p){ eq*=(1-COST); if(nx===1){ep=cl[i];} else { trades.push(cl[i]/ep-1-2*COST);} }
+    if(eq>peak) peak=eq; if(eq/peak-1<dd) dd=eq/peak-1;
   }
-};
-function addAllowed(side, sig, t) {
-  if (side === "long") return sig["1h"] === "K" && sig["4h"] !== "V" && sig["1d"] !== "V" && t.d1 === "up";
-  return sig["1h"] === "V" && sig["4h"] !== "K" && sig["1d"] !== "K" && t.d1 === "dn";
+  var open=(st[cl.length-1]===1)?(cl[cl.length-1]/ep-1):null;
+  var hold=cl[cl.length-1]/hold0-1, hpk=cl[from], hdd=0;
+  for(i=from;i<cl.length;i++){ if(cl[i]>hpk) hpk=cl[i]; if(cl[i]/hpk-1<hdd) hdd=cl[i]/hpk-1; }
+  var wins=trades.filter(function(x){return x>0;}).length;
+  return {ret:eq-1,dd:dd,trades:trades.length,wins:wins,open:open,hold:hold,hdd:hdd};
 }
 
 /* ---------- render ---------- */
-function setBadge(title, sub, add, color) {
-  const a = document.getElementById("advice");
-  a.textContent = title; a.style.color = color;
-  document.getElementById("adviceSub").textContent = sub || "";
-  document.getElementById("adviceAdd").textContent = add || "";
-  document.getElementById("badge").style.border = `1px solid ${color}`;
-}
+function render(data){
+  var all=data.c.slice().sort(function(a,b){return a.t-b.t;});
+  var now=Date.now(), dayMs=86400000;
+  var live=all[all.length-1];
+  var closed=all.filter(function(k){ return k.t+dayMs<=now; });
+  if(closed.length<BUY_N+5) throw new Error("Te weinig afgesloten dagen ontvangen.");
+  if(live.t+dayMs<=now) live=null;
+  var cl=closed.map(function(k){return k.c;}), n=cl.length, last=closed[n-1];
+  var st=donchianStates(cl), es=emaStates(cl);
+  var s=st[n-1], sp=st[n-2], e=es[n-1];
+  var lv=levels(cl);
+  var price=live?live.c:last.c;
 
-function render() {
-  document.getElementById("meta").textContent = state.lastUpdate
-    ? `bron: ${state.source} · update ${state.lastUpdate.toLocaleTimeString("nl-NL")}` : "verbinden...";
-  const price = currentPrice();
-  if (price) document.getElementById("price").textContent = "€" + fmt(price);
+  // advice
+  var k, why;
+  if(s===1&&sp===0){ k="KOPEN"; why="Gisteren sloot BTC op het hoogste punt van de laatste 55 dagen. Er is een nieuwe trend omhoog."; }
+  else if(s===0&&sp===1){ k="VERKOPEN"; why="Gisteren sloot BTC op het laagste punt van de laatste 20 dagen. De trend omhoog is voorbij."; }
+  else if(s===1){ k="VASTHOUDEN"; why="De trend omhoog loopt nog. Blijf in je positie zolang de koers boven het verkoopniveau sluit."; }
+  else { k="NIETS DOEN"; why="Er is geen trend omhoog. Wacht tot BTC sluit boven het koopniveau."; }
+  $("advice").dataset.k=k; $("adviceWord").textContent=k; $("adviceWhy").textContent=why;
+  var risk=$("adviceRisk"); risk.className="";
+  if(k==="KOPEN"&&e===0){ risk.textContent="Risico hoger: de EMA op de dagkaart wijst nog omlaag. Overweeg een kleinere positie."; risk.className="warn"; }
+  else if(k==="KOPEN"){ risk.textContent="Koop zonder hefboom. Reken erop dat ongeveer de helft van deze trades verlies geeft."; }
+  else if(k==="VASTHOUDEN"&&e===0){ risk.textContent="Let op: de EMA op de dagkaart is al omgeslagen. De trend verzwakt."; risk.className="warn"; }
+  else risk.textContent="";
 
-  const res = {}; IVS.forEach(iv => res[iv] = analyze(iv));
-  const complete = IVS.every(iv => res[iv]);
-  const sig = {}, t = {};
-  IVS.forEach(iv => { if (res[iv]) { sig[iv] = res[iv].signal; t[iv === "15m" ? "m15" : iv] = res[iv].trend; } });
-  const trends = { h1: t["1h"], h4: t["4h"], d1: t["1d"] };
+  // ruler
+  var x=Math.max(0,Math.min(1,(price-lv.sell)/((lv.buy-lv.sell)||1)));
+  $("pin").style.left=(x*100)+"%"; var pl=$("pinLabel"); pl.textContent=eur.format(price);
+  pl.style.transform=x<0.18?"translateX(-12px)":(x>0.82?"translateX(calc(-100% + 12px))":"translateX(-50%)");
+  $("lvlSell").textContent=eur.format(lv.sell); $("lvlBuy").textContent=eur.format(lv.buy);
+  var to=$("toLevel");
+  if(s===1) to.textContent="Verkoopniveau ligt "+pct(lv.sell/price-1)+" van de koers van nu.";
+  else to.textContent="Koopniveau ligt "+pct(lv.buy/price-1)+" van de koers van nu.";
+  var pv=$("preview");
+  if(live){
+    if(s===0&&price>=lv.buy) pv.textContent="De koers staat nu boven het koopniveau. Sluit de dag zo, dan wordt het morgen KOPEN.";
+    else if(s===1&&price<=lv.sell) pv.textContent="De koers staat nu onder het verkoopniveau. Sluit de dag zo, dan wordt het morgen VERKOPEN.";
+    else pv.textContent="Vandaag telt pas mee na de dagsluiting om 00:00 UTC.";
+  } else pv.textContent="";
 
-  // tabel per timeframe
-  const SIGTXT = { K: "KOPEN", N: "NIETS", V: "VERKOPEN" };
-  document.getElementById("tfBody").innerHTML = IVS.map(iv => {
-    const r = res[iv];
-    if (!r) return `<tr><td>${IV_LABEL[iv]}</td><td colspan="3" class="muted">geen data</td></tr>`;
-    return `<tr><td>${IV_LABEL[iv]}</td><td class="${r.signal.toLowerCase()}">${SIGTXT[r.signal]}</td>
-      <td class="${r.trend === "up" ? "k" : "v"}">${r.trend === "up" ? "▲ op" : "▼ neer"}</td>
-      <td>${r.rsi != null ? r.rsi.toFixed(0) : "-"}</td></tr>`;
-  }).join("");
+  $("stamp").textContent="Laatste dagsluiting "+dstr(last.t)+" · "+data.src;
 
-  renderPosition(price);
+  // ema
+  $("emaState").textContent=e===1?"Wijst omhoog":"Wijst omlaag";
+  $("emaState").className="v "+(e===1?"pos":"neg");
+  $("emaAgree").textContent=(e===s)?"Ja":"Nee";
 
-  // advies
-  const pos = state.pos;
-  const label = document.getElementById("badgeLabel");
-  if (!complete) {
-    label.textContent = "ADVIES";
-    setBadge("WACHTEN OP DATA", "Nog niet alle vier de timeframes geladen.", "", "#5a7a63");
-  } else if (pos) {
-    label.textContent = pos.side === "long" ? "ADVIES · OPEN LONG" : "ADVIES · OPEN SHORT";
-    const stopHit = pos.stop && price && (pos.side === "long" ? price <= pos.stop : price >= pos.stop);
-    if (stopHit) {
-      setBadge("STOP GERAAKT", `Koers €${fmt(price)} is voorbij je stop van €${fmt(pos.stop)}. Sluit de positie, wat de matrix ook zegt.`, "", "#ff4d4d");
-    } else {
-      const code = act(pos.side, sig["15m"], sig["1h"], sig["4h"], sig["1d"], trends);
-      const [title, sub] = TEXT[pos.side][code];
-      const add = addAllowed(pos.side, sig, trends)
-        ? (pos.side === "long" ? "Bijkopen toegestaan (max. helft eerste positie)." : "Bijshorten toegestaan (max. helft eerste positie).")
-        : (pos.side === "long" ? "Niet bijkopen." : "Niet bijshorten.");
-      const noStop = pos.stop ? "" : " · Let op: je hebt nog geen stop ingesteld.";
-      setBadge(title, sub + noStop, add, CODES[code].col);
-    }
+  // open trade
+  var tr=$("tradeRows");
+  if(s===1){
+    var i=n-1; while(i>0&&st[i-1]===1) i--;
+    var res=price/cl[i]-1;
+    tr.innerHTML=row("Gekocht volgens de regel",dstr(closed[i].t)+" (+1 dag)")+row("Instapkoers (slot)",eur.format(cl[i]))+
+      row("Resultaat nu",'<span class="'+(res>=0?"pos":"neg")+'">'+pct(res)+"</span>")+row("Dagen in de trade",String(n-i));
   } else {
-    label.textContent = "ADVIES · GEEN POSITIE";
-    if (addAllowed("long", sig, trends)) setBadge("LONG MOGELIJK", "1h KOPEN, 4h/1d niet tegen, 1d-trend op. Bepaal eerst je stop.", "", "#33ff99");
-    else if (addAllowed("short", sig, trends)) setBadge("SHORT MOGELIJK", "1h VERKOPEN, 4h/1d niet tegen, 1d-trend neer. Bepaal eerst je stop.", "", "#ff4d4d");
-    else setBadge("NIETS DOEN", "Geen instap: wacht tot 1h een signaal geeft dat de hogere timeframes niet tegenspreken.", "", "#ffb000");
+    var j=n-1; while(j>0&&st[j-1]===0) j--;
+    tr.innerHTML=row("Status","Geen trade, in euro's")+row("Laatste verkoopdag",j>BUY_N?dstr(closed[j].t):"–");
   }
 
-  // matrix
-  const view = pos ? pos.side : state.matrixView;
-  document.getElementById("matrixLabel").textContent = view === "long" ? "BESLISMATRIX · LONG" : "BESLISMATRIX · SHORT";
-  document.getElementById("matrixToggle").innerHTML = pos ? "" :
-    `<button class="${view === "long" ? "active" : ""}" onclick="setView('long')">Long-matrix</button>
-     <button class="${view === "short" ? "active" : ""}" onclick="setView('short')">Short-matrix</button>`;
-  if (complete) renderGrid(view, sig, trends);
+  // chart
+  drawChart(closed,st);
 
-  // grafiek + redenering
-  const cr = res[state.chartIv];
-  document.getElementById("reasonLabel").textContent = `REDENERING · ${IV_LABEL[state.chartIv]}`;
-  if (cr) {
-    document.getElementById("rsiLabel").textContent = `RSI(14): ${cr.rsi.toFixed(1)}`;
-    document.getElementById("reasons").innerHTML = cr.reasons.map(r => `<div>› ${r}</div>`).join("");
-    document.getElementById("chart").innerHTML = renderChart(state.data[state.chartIv], cr.ema9, cr.ema21);
-    document.getElementById("volumeChart").innerHTML = renderVolumeChart(state.data[state.chartIv]);
+  // track record
+  var from=Math.max(BUY_N,21);
+  var sd=simulate(cl,st,from), se=simulate(cl,es,from);
+  var yrs=(closed[n-1].t-closed[from].t)/(365.25*dayMs);
+  $("trackRows").innerHTML=
+    row("Doorbraakregel, totaal",'<span class="'+(sd.ret>=0?"pos":"neg")+'">'+pct(sd.ret,0)+"</span>")+
+    row("Grootste daling",pct(sd.dd,0))+
+    row("Afgesloten trades",sd.trades+" ("+sd.wins+" met winst)")+
+    row("EMA9/21 dag, totaal",'<span class="'+(se.ret>=0?"pos":"neg")+'">'+pct(se.ret,0)+"</span> · "+se.trades+" trades")+
+    row("Alleen vasthouden",'<span class="'+(sd.hold>=0?"pos":"neg")+'">'+pct(sd.hold,0)+"</span> · daling "+pct(sd.hdd,0));
+  $("trackNote").textContent="Over de laatste "+yrs.toFixed(1).replace(".",",")+" jaar die "+data.src+" levert, sinds "+dstr(closed[from].t)+". Inclusief 0,30% kosten per aan- of verkoop. Het verleden is geen garantie.";
+
+  // shadow log
+  updateShadow(closed,st,es);
+
+}
+function row(k,v){ return '<div class="row"><span class="k">'+k+'</span><span class="v">'+v+"</span></div>"; }
+
+function drawChart(closed,st){
+  var N=Math.min(150,closed.length-BUY_N), off=closed.length-N, svg=$("chart");
+  var W=360,H=190,P={l:4,r:4,t:10,b:18};
+  var cl=closed.map(function(k){return k.c;});
+  var buyL=[],sellL=[],pts=[];
+  for(var i=off;i<closed.length;i++){
+    var hi=-Infinity,lo=Infinity;
+    for(var j=i-(BUY_N-1);j<i;j++) if(cl[j]>hi) hi=cl[j];
+    for(j=i-(SELL_N-1);j<i;j++) if(cl[j]<lo) lo=cl[j];
+    buyL.push(hi); sellL.push(lo); pts.push(cl[i]);
   }
-}
-function setView(v) { state.matrixView = v; render(); }
-
-function renderPosition(price) {
-  const p = state.pos;
-  const body = document.getElementById("posBody");
-  const actions = document.getElementById("posActions");
-  const form = document.getElementById("posForm");
-  if (p) {
-    const dir = p.side === "long" ? 1 : -1;
-    const move = price ? dir * (price - p.entry) / p.entry * 100 : 0;
-    const liq = liqPrice(p);
-    let html = `<div><span class="${p.side === "long" ? "k" : "v"}">${p.side.toUpperCase()}</span> · ${p.lev}x · instap €${fmt(p.entry)} (${new Date(p.date).toLocaleDateString("nl-NL")})</div>`;
-    if (price) html += `<div>Resultaat: <span class="${move >= 0 ? "k" : "v"}">${pct(move * p.lev)}</span> op je inleg <span class="muted">(koers ${pct(move)})</span></div>`;
-    if (p.stop) {
-      const dist = price ? Math.abs(price - p.stop) / price * 100 : 0;
-      const risk = Math.abs(p.entry - p.stop) / p.entry * 100 * p.lev;
-      html += `<div>Stop €${fmt(p.stop)} · ${dist.toFixed(1)}% van de koers · max. verlies ±${risk.toFixed(1)}% van je inleg</div>`;
-    } else html += `<div class="warn">Geen stop ingesteld.</div>`;
-    if (liq) {
-      html += `<div>Liquidatie ±€${fmt(liq)} <span class="muted">(grove schatting)</span></div>`;
-      if (!p.stop) html += `<div class="warn">Met ${p.lev}x hefboom zonder stop riskeer je liquidatie.</div>`;
-      else if ((p.side === "long" && p.stop <= liq * 1.02) || (p.side === "short" && p.stop >= liq * 0.98)) html += `<div class="warn">Je stop ligt (bijna) voorbij de liquidatieprijs. Zet hem dichter bij je instap of verlaag je hefboom.</div>`;
-    }
-    body.innerHTML = html;
-    actions.innerHTML = `<button class="primary" onclick="toggleForm()">${state.formOpen ? "annuleren" : "stop / gegevens aanpassen"}</button>
-      <button onclick="closePos()">✓ Positie gesloten</button>`;
-  } else {
-    body.innerHTML = `<div class="muted">Geen open positie.</div>`;
-    actions.innerHTML = `<button class="long" onclick="quickOpen('long')">✓ Long geopend (nu)</button>
-      <button class="short" onclick="quickOpen('short')">✓ Short geopend (nu)</button>
-      <button onclick="toggleForm()">${state.formOpen ? "annuleren" : "handmatig"}</button>`;
+  var mn=Math.min.apply(null,sellL.concat(pts)), mx=Math.max.apply(null,buyL.concat(pts));
+  var xs=function(i){return P.l+i*(W-P.l-P.r)/(N-1);}, ys=function(v){return P.t+(mx-v)*(H-P.t-P.b)/((mx-mn)||1);};
+  var path=function(a){return a.map(function(v,i){return (i?"L":"M")+xs(i).toFixed(1)+" "+ys(v).toFixed(1);}).join(" ");};
+  var marks="";
+  for(i=1;i<N;i++){
+    var a=st[off+i-1],b=st[off+i];
+    if(a===0&&b===1) marks+='<text x="'+xs(i).toFixed(1)+'" y="'+(ys(pts[i])+14).toFixed(1)+'" text-anchor="middle" font-size="11" fill="var(--buy)">▲</text>';
+    if(a===1&&b===0) marks+='<text x="'+xs(i).toFixed(1)+'" y="'+(ys(pts[i])-6).toFixed(1)+'" text-anchor="middle" font-size="11" fill="var(--sell)">▼</text>';
   }
-  if (state.formOpen) {
-    const q = p || { side: "long", entry: price ? Math.round(price) : "", stop: "", lev: 1 };
-    form.innerHTML = `<div class="formgrid">
-      <label>Richting<select id="fSide"><option value="long" ${q.side === "long" ? "selected" : ""}>Long</option><option value="short" ${q.side === "short" ? "selected" : ""}>Short</option></select></label>
-      <label>Hefboom<input type="number" id="fLev" min="1" step="1" value="${q.lev || 1}"></label>
-      <label>Instapprijs €<input type="number" id="fEntry" step="1" inputmode="decimal" value="${q.entry ? Math.round(q.entry) : ""}"></label>
-      <label>Stop €<input type="number" id="fStop" step="1" inputmode="decimal" value="${q.stop ? Math.round(q.stop) : ""}" placeholder="verplicht aanbevolen"></label>
-      </div>
-      <div class="btnrow"><button class="primary" onclick="saveForm()">Opslaan</button></div>`;
-  } else form.innerHTML = "";
+  var lab=function(i){var d=new Date(closed[off+i].t);return d.toLocaleDateString("nl-NL",{month:"short",timeZone:"UTC"});};
+  svg.innerHTML=
+    '<path d="'+path(buyL)+'" fill="none" stroke="var(--buy)" stroke-width="1.4" stroke-dasharray="4 3"/>'+
+    '<path d="'+path(sellL)+'" fill="none" stroke="var(--sell)" stroke-width="1.4" stroke-dasharray="4 3"/>'+
+    '<path d="'+path(pts)+'" fill="none" stroke="var(--ink)" stroke-width="1.8" stroke-linejoin="round"/>'+marks+
+    '<text x="'+P.l+'" y="'+(H-4)+'" font-size="10" fill="var(--muted)">'+lab(0)+'</text>'+
+    '<text x="'+(W/2)+'" y="'+(H-4)+'" font-size="10" fill="var(--muted)" text-anchor="middle">'+lab(Math.floor(N/2))+'</text>'+
+    '<text x="'+(W-P.r)+'" y="'+(H-4)+'" font-size="10" fill="var(--muted)" text-anchor="end">'+lab(N-1)+'</text>';
 }
 
-function renderGrid(view, sig, t) {
-  const g = document.getElementById("grid");
-  let h = `<div class="hd">1h →</div>`;
-  S.forEach(x => h += `<div class="hd" style="grid-column:span 3;background:#0c130e;">${x}</div>`);
-  h += `<div class="hd">15m →</div>`;
-  S.forEach(() => S.forEach(m => h += `<div class="hd">${m}</div>`));
-  S.forEach((h4, i) => S.forEach(d1 => {
-    const mt = (d1 === "K" && i > 0) ? "margin-top:4px;" : "";
-    h += `<div class="hd" style="justify-content:flex-start;font-size:10.5px;${mt}">4h ${h4} · 1d ${d1}</div>`;
-    S.forEach(h1 => S.forEach(m => {
-      const c = CODES[act(view, m, h1, h4, d1, t)];
-      const me = m === sig["15m"] && h1 === sig["1h"] && h4 === sig["4h"] && d1 === sig["1d"];
-      h += `<div class="${me ? "me" : ""}" style="background:${c.bg};color:${c.col};font-weight:700;${mt}">${c.c}</div>`;
-    }));
-  }));
-  g.innerHTML = h;
-  const L = TEXT[view];
-  document.getElementById("matrixLegend").innerHTML =
-    `<span>K kopen · N niets · V verkopen · omlijnd = nu · trends live verwerkt</span>` +
-    Object.keys(CODES).map(k => `<span style="color:${CODES[k].col}">${CODES[k].c} ${k === "W" ? "vasthouden, vaker kijken" : L[k][0].toLowerCase()}</span>`).join("");
-}
 
-function renderChart(candles, ema9, ema21) {
-  const vis = candles.slice(-60), e9 = ema9.slice(-60), e21 = ema21.slice(-60);
-  const W = 900, H = 320, padL = 50, padR = 10, padT = 10, padB = 10;
-  if (vis.length < 2) return "";
-  const vals = [...vis.map(c => c.high), ...vis.map(c => c.low), ...e9, ...e21];
-  let max = Math.max(...vals), min = Math.min(...vals);
-  const p = state.pos;
-  const extra = [];
-  if (p) { extra.push([p.entry, "#c9e6d3"]); if (p.stop) extra.push([p.stop, "#ff6b6b"]); }
-  extra.forEach(([v]) => { max = Math.max(max, v); min = Math.min(min, v); });
-  const range = max - min || 1, cw = (W - padL - padR) / vis.length;
-  const y = v => padT + (1 - (v - min) / range) * (H - padT - padB);
-  const x = i => padL + i * cw + cw / 2;
-  const line = arr => arr.map((v, i) => `${i === 0 ? "M" : "L"} ${x(i)} ${y(v)}`).join(" ");
-  let svg = "";
-  vis.forEach((c, i) => {
-    const col = c.close >= c.open ? "#33ff99" : "#ff4d4d", xc = x(i);
-    svg += `<line x1="${xc}" x2="${xc}" y1="${y(c.high)}" y2="${y(c.low)}" stroke="${col}" stroke-width="1"/>`;
-    svg += `<rect x="${xc - cw * 0.32}" y="${Math.min(y(c.open), y(c.close))}" width="${cw * 0.64}" height="${Math.max(1, Math.abs(y(c.open) - y(c.close)))}" fill="${col}"/>`;
+
+/* ---------- shadow log ---------- */
+function readLog(){ try{ return JSON.parse(localStorage.getItem(LOG_KEY)||"[]"); }catch(e){ return []; } }
+function writeLog(l){ try{ localStorage.setItem(LOG_KEY,JSON.stringify(l)); }catch(e){} }
+function updateShadow(closed,st,es){
+  var log=readLog(), start=null;
+  try{ start=localStorage.getItem(START_KEY); }catch(e){}
+  var n=closed.length;
+  if(!start){ start=dkey(closed[n-1].t); try{ localStorage.setItem(START_KEY,start); }catch(e){} }
+  var have={}; log.forEach(function(r){have[r.d]=1;});
+  for(var i=0;i<n;i++){
+    var d=dkey(closed[i].t);
+    if(d<start||have[d]) continue;
+    log.push({d:d,c:Math.round(closed[i].c),dc:st[i],em:es[i]});
+  }
+  log.sort(function(a,b){return a.d<b.d?-1:1;});
+  writeLog(log);
+
+  // virtual results since start
+  function res(key){
+    var eq=1,cur=0;
+    for(var i=1;i<log.length;i++){ if(log[i-1][key]===1) eq*=log[i].c/log[i-1].c; if(log[i][key]!==log[i-1][key]) eq*=(1-COST); }
+    return eq-1;
+  }
+  var days=log.length;
+  var hold=days>1?log[days-1].c/log[0].c-1:0;
+  $("shadowRows").innerHTML=row("Loopt sinds",start.split("-").reverse().join("-"))+row("Dagen gelogd",String(days))+
+    (days>1? row("Doorbraakregel",pct(res("dc")))+row("EMA9/21 dag",pct(res("em")))+row("Alleen vasthouden",pct(hold)) : row("Resultaten","vanaf de tweede dag"));
+  var tb=$("logTable").tBodies[0], h="";
+  log.slice(-30).reverse().forEach(function(r){
+    h+="<tr><td>"+r.d.slice(8,10)+"-"+r.d.slice(5,7)+"</td><td class='n'>"+eur.format(r.c)+"</td><td>"+(r.dc?"in":"uit")+"</td><td>"+(r.em?"omhoog":"omlaag")+"</td></tr>";
   });
-  svg += `<path d="${line(e9)}" fill="none" stroke="#ffb000" stroke-width="1.3" opacity="0.9"/>`;
-  svg += `<path d="${line(e21)}" fill="none" stroke="#7fb3ff" stroke-width="1.3" opacity="0.9"/>`;
-  extra.forEach(([v, col]) => {
-    svg += `<line x1="${padL}" x2="${W - padR}" y1="${y(v)}" y2="${y(v)}" stroke="${col}" stroke-width="1" stroke-dasharray="6,4"/>`;
-    svg += `<text x="2" y="${y(v) + 4}" fill="${col}" font-size="13" font-family="monospace">${fmt(v / 1000)}k</text>`;
-  });
-  return svg;
+  tb.innerHTML=h||"<tr><td colspan='4'>Nog niets gelogd</td></tr>";
 }
-function renderVolumeChart(candles) {
-  const vis = candles.slice(-60);
-  if (vis.length < 2) return "";
-  const W = 900, H = 70, padL = 50, padR = 10;
-  const vols = vis.map(c => c.volume || 0), max = Math.max(...vols) || 1;
-  const avg = vols.reduce((a, b) => a + b, 0) / vols.length, cw = (W - padL - padR) / vis.length;
-  const y = v => H - (v / max) * (H - 6), x = i => padL + i * cw + cw / 2;
-  let svg = "";
-  vis.forEach((c, i) => {
-    const by = y(c.volume || 0);
-    svg += `<rect x="${x(i) - cw * 0.32}" y="${by}" width="${cw * 0.64}" height="${H - by}" fill="${c.close >= c.open ? "#33ff99" : "#ff4d4d"}" opacity="0.55"/>`;
-  });
-  svg += `<line x1="${padL}" x2="${W - padR}" y1="${y(avg)}" y2="${y(avg)}" stroke="#5a7a63" stroke-width="1" stroke-dasharray="4,3"/>`;
-  return svg;
+$("copyLog").addEventListener("click",function(){
+  var txt="datum;slot;doorbraak;ema\n"+readLog().map(function(r){return r.d+";"+r.c+";"+(r.dc?"in":"uit")+";"+(r.em?"omhoog":"omlaag");}).join("\n");
+  var b=this;
+  (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(function(){b.textContent="Gekopieerd";setTimeout(function(){b.textContent="Kopieer log";},1800);},
+    function(){ window.prompt("Kopieer de log:",txt); });
+});
+$("resetLog").addEventListener("click",function(){
+  if(!confirm("Schaduwlog wissen en vandaag opnieuw beginnen?")) return;
+  try{ localStorage.removeItem(LOG_KEY); localStorage.removeItem(START_KEY); }catch(e){}
+  load();
+});
+
+/* ---------- boot ---------- */
+var busy=false;
+function load(){
+  if(busy) return; busy=true;
+  var err=$("err"); err.style.display="none";
+  $("refresh").textContent="Laden…";
+  loadBinance().catch(function(e1){ return loadKraken().catch(function(e2){ throw new Error("Binance en Kraken zijn allebei niet bereikbaar. Controleer je verbinding en tik op Ververs. ("+e1.message+")"); }); })
+    .then(render)
+    .catch(function(e){ err.textContent=e.message; err.style.display="block"; })
+    .then(function(){ busy=false; $("refresh").textContent="Ververs"; });
 }
-
-/* ---------- events ---------- */
-document.querySelectorAll("#intervals button[data-iv]").forEach(b => b.addEventListener("click", () => {
-  state.chartIv = b.dataset.iv;
-  document.querySelectorAll("#intervals button[data-iv]").forEach(x => x.classList.toggle("active", x === b));
-  render();
-}));
-document.getElementById("refreshBtn").addEventListener("click", fetchAll);
-setInterval(() => { const c = document.getElementById("cursor"); c.style.opacity = c.style.opacity === "0" ? "1" : "0"; }, 600);
-
-render();
-fetchAll();
-state.timer = setInterval(fetchAll, 60000);
+$("refresh").addEventListener("click",load);
+document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible") load(); });
+window.__btcdag={donchianStates:donchianStates,emaStates:emaStates,levels:levels,simulate:simulate};
+load();
+})();
 </script>
 </body>
 </html>
