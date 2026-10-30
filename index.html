@@ -5,119 +5,106 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="BTC dag">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta name="theme-color" content="#E9EDF1" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#161C23" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#12161c" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f3f5f8" media="(prefers-color-scheme: light)">
 <title>BTC dagkaart</title>
 <style>
 :root{
   color-scheme: light;
-  --bg:#E9EDF1; --surface:#F6F8FA; --ink:#1B2631; --muted:#5F6B78; --line:#C9D1D9;
-  --buy:#17795A; --sell:#A62F3C; --hold:#2F5E9E; --wait:#6A7480; --warn:#9A6A08;
-  --buy-soft:#D6EDE4; --sell-soft:#F3DADD; --hold-soft:#DCE6F4; --wait-soft:#E2E6EA;
+  --bg:#f3f5f8; --surface:#ffffff; --line:#dde2ea; --ink:#18202b; --muted:#5f6b7b;
+  --buy:#1f8a62; --buy-bg:#e2f4ec; --sell:#c2424f; --sell-bg:#fbe7e9;
+  --hold:#2f6fd1; --hold-bg:#e5eefc; --idle:#5f6b7b; --idle-bg:#e9edf2;
+  --warn:#a86a00; --warn-bg:#fdf1d8;
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);
   padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
+  :root{
     color-scheme: dark;
-    --bg:#161C23; --surface:#1E262F; --ink:#E6EBF0; --muted:#97A3AF; --line:#334150;
-    --buy:#4CC79A; --sell:#EF7A86; --hold:#7FA8E6; --wait:#9AA5B1; --warn:#E2B04A;
-    --buy-soft:#173A2F; --sell-soft:#3F2228; --hold-soft:#1F3049; --wait-soft:#28313B;
+    --bg:#12161c; --surface:#1b212a; --line:#2a323e; --ink:#e8ecf1; --muted:#8e9aab;
+    --buy:#4cc995; --buy-bg:#163a2d; --sell:#ef7f8a; --sell-bg:#3d1d23;
+    --hold:#7fb0ff; --hold-bg:#1a2b47; --idle:#a3adbb; --idle-bg:#252c37;
+    --warn:#f0c062; --warn-bg:#3a2f15;
   }
-}
-:root[data-theme="dark"]{
-  color-scheme: dark;
-  --bg:#161C23; --surface:#1E262F; --ink:#E6EBF0; --muted:#97A3AF; --line:#334150;
-  --buy:#4CC79A; --sell:#EF7A86; --hold:#7FA8E6; --wait:#9AA5B1; --warn:#E2B04A;
-  --buy-soft:#173A2F; --sell-soft:#3F2228; --hold-soft:#1F3049; --wait-soft:#28313B;
 }
 *,*::before,*::after{box-sizing:inherit}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{
-  margin:0; background:var(--bg); color:var(--ink);
-  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-  font-size:16px; line-height:1.45; -webkit-text-size-adjust:100%;
-  font-variant-numeric:tabular-nums;
-}
-main{max-width:560px; margin:0 auto; padding:16px 18px 40px}
-header{display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:8px 0 18px}
-h1{font-size:1.15rem; font-weight:650; margin:0; letter-spacing:-.01em}
-.sub{color:var(--muted); font-size:.85rem}
-button{
-  font:inherit; font-size:.9rem; color:var(--ink); background:var(--surface);
-  border:1px solid var(--line); border-radius:999px; padding:7px 14px; cursor:pointer;
-}
-button:focus-visible{outline:2px solid var(--hold); outline-offset:2px}
-button:active{transform:translateY(1px)}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-text-size-adjust:100%;font-variant-numeric:tabular-nums}
+main{max-width:560px;margin:0 auto;padding:12px 16px 40px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 14px}
+header h1{font-size:17px;margin:0;font-weight:650}
+#stamp{font-size:13px;color:var(--muted)}
+button{font:inherit;font-size:15px;color:var(--ink);background:var(--surface);border:1px solid var(--line);
+  border-radius:10px;padding:8px 14px;cursor:pointer}
+button:focus-visible,summary:focus-visible{outline:2px solid var(--hold);outline-offset:2px}
 
-/* Advice */
-#advice{border-radius:22px; padding:22px 20px 20px; background:var(--wait-soft); transition:background .3s}
-#advice[data-k="KOPEN"]{background:var(--buy-soft)}
-#advice[data-k="VERKOPEN"]{background:var(--sell-soft)}
-#advice[data-k="VASTHOUDEN"]{background:var(--hold-soft)}
-#adviceWord{font-size:clamp(2.6rem,13vw,3.6rem); font-weight:800; letter-spacing:-.035em; line-height:1; margin:0 0 10px; color:var(--wait)}
-#advice[data-k="KOPEN"] #adviceWord{color:var(--buy)}
-#advice[data-k="VERKOPEN"] #adviceWord{color:var(--sell)}
-#advice[data-k="VASTHOUDEN"] #adviceWord{color:var(--hold)}
-#adviceWhy{margin:0; font-size:1rem}
-#adviceRisk{margin:12px 0 0; font-size:.88rem; color:var(--muted)}
-#adviceRisk.warn{color:var(--warn); font-weight:600}
+/* hero */
+#hero{border-radius:20px;padding:20px 20px 18px;background:var(--idle-bg);border-left:8px solid var(--idle)}
+#hero[data-k="KOPEN"]{background:var(--buy-bg);border-left-color:var(--buy)}
+#hero[data-k="VERKOPEN"]{background:var(--sell-bg);border-left-color:var(--sell)}
+#hero[data-k="VASTHOUDEN"]{background:var(--hold-bg);border-left-color:var(--hold)}
+#word{margin:0;font-size:clamp(46px,15vw,68px);line-height:1;font-weight:800;letter-spacing:-0.03em;color:var(--idle)}
+#hero[data-k="KOPEN"] #word{color:var(--buy)}
+#hero[data-k="VERKOPEN"] #word{color:var(--sell)}
+#hero[data-k="VASTHOUDEN"] #word{color:var(--hold)}
+#kind{margin:6px 0 0;font-size:15px;color:var(--muted);font-weight:600}
+#why{margin:10px 0 0;font-size:18px;line-height:1.4}
+#risk{display:none;margin:14px 0 0;padding:10px 12px;border-radius:12px;background:var(--warn-bg);color:var(--ink);font-size:15px}
+#risk b{color:var(--warn)}
 
-/* Ruler (the channel) */
-.ruler{margin:26px 2px 6px}
-.track{position:relative; height:44px}
-.bar{position:absolute; left:0; right:0; top:19px; height:6px; border-radius:3px;
-  background:linear-gradient(90deg,var(--sell) 0,var(--line) 18%,var(--line) 82%,var(--buy) 100%)}
-.pin{position:absolute; top:6px; width:0; height:32px}
-.pin::before{content:""; position:absolute; left:-9px; top:7px; width:18px; height:18px; border-radius:50%;
-  background:var(--ink); border:3px solid var(--bg)}
-.pin span{position:absolute; bottom:36px; transform:translateX(-50%); white-space:nowrap; font-size:.8rem; font-weight:650}
-.ends{display:flex; justify-content:space-between; gap:12px; font-size:.82rem; color:var(--muted)}
-.ends b{display:block; color:var(--ink); font-size:.95rem; font-weight:650}
-.ends .r{text-align:right}
-#toLevel{margin:12px 0 0; font-size:.92rem}
-#preview{margin:6px 0 0; font-size:.86rem; color:var(--muted)}
-
-section{margin-top:30px}
-h2{font-size:1rem; font-weight:650; margin:0 0 10px}
-.rows{background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow:hidden}
-.row{display:flex; justify-content:space-between; gap:12px; padding:11px 14px; border-top:1px solid var(--line); font-size:.93rem}
+/* plain sections */
+section{margin-top:26px}
+h2{font-size:17px;margin:0 0 8px;font-weight:700}
+.rows{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.row{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:12px 14px;border-top:1px solid var(--line)}
 .row:first-child{border-top:0}
 .row .k{color:var(--muted)}
-.row .v{font-weight:600; text-align:right}
-.pos{color:var(--buy)} .neg{color:var(--sell)}
-.note{font-size:.84rem; color:var(--muted); margin:8px 2px 0}
+.row .v{text-align:right;font-weight:600}
+.row small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+.note{font-size:14px;color:var(--muted);margin:8px 2px 0}
 
-.chartwrap{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:10px 8px 6px; overflow:hidden}
-svg{display:block; width:100%; height:auto}
-.legend{display:flex; flex-wrap:wrap; gap:4px 14px; font-size:.78rem; color:var(--muted); padding:6px 6px 2px}
-.legend i{display:inline-block; width:14px; height:3px; border-radius:2px; vertical-align:middle; margin-right:5px}
+/* next steps */
+.step{padding:13px 14px;border-top:1px solid var(--line)}
+.step:first-child{border-top:0}
+.step p{margin:0}
+.step .big{font-size:20px;font-weight:700}
+.step .sub{font-size:14px;color:var(--muted);margin-top:2px}
+#preview{margin:10px 2px 0;font-size:15px}
 
-table{width:100%; border-collapse:collapse; font-size:.85rem}
-th,td{padding:8px 10px; text-align:left; border-top:1px solid var(--line)}
-th{color:var(--muted); font-weight:500; border-top:0}
+/* checks */
+.check{display:grid;grid-template-columns:28px 1fr;gap:6px;padding:12px 14px;border-top:1px solid var(--line)}
+.check:first-child{border-top:0}
+.mark{font-weight:800;font-size:18px;line-height:1.3}
+.ok .mark{color:var(--buy)} .no .mark{color:var(--sell)} .na .mark{color:var(--muted)}
+.check p{margin:0}
+.check .sub{font-size:14px;color:var(--muted)}
+
+/* other rule */
+#other{background:transparent;border:1px dashed var(--line);border-radius:14px;padding:12px 14px;font-size:15px;color:var(--muted)}
+#other b{color:var(--ink)}
+
+/* chart */
+.chartwrap{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 8px 8px}
+#chart{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;color:var(--muted);padding:6px 6px 0}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;vertical-align:middle;margin-right:5px}
+
+details{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0 14px}
+details+details{margin-top:10px}
+summary{cursor:pointer;padding:13px 0;font-weight:600}
+details[open] summary{border-bottom:1px solid var(--line);margin-bottom:6px}
+details p{margin:10px 0}
+.logwrap{overflow-x:auto;margin:8px 0}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:6px 6px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--muted);font-weight:600}
 td.n,th.n{text-align:right}
-.logwrap{background:var(--surface); border:1px solid var(--line); border-radius:14px; overflow-x:auto}
-.actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px}
-details{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:12px 14px}
-summary{cursor:pointer; font-weight:600}
-details p{margin:10px 0 0; font-size:.92rem}
-#err{display:none; margin-top:14px; padding:12px 14px; border-radius:12px; background:var(--sell-soft); color:var(--ink); font-size:.9rem}
-#advice2{border-radius:18px; padding:16px 18px; background:var(--wait-soft)}
-#advice2[data-k="KOPEN"]{background:var(--buy-soft)}
-#advice2[data-k="VERKOPEN"]{background:var(--sell-soft)}
-#advice2[data-k="VASTHOUDEN"]{background:var(--hold-soft)}
-#a2Word{font-size:1.9rem; font-weight:800; letter-spacing:-.03em; line-height:1; margin:0 0 8px; color:var(--wait)}
-#advice2[data-k="KOPEN"] #a2Word{color:var(--buy)}
-#advice2[data-k="VERKOPEN"] #a2Word{color:var(--sell)}
-#advice2[data-k="VASTHOUDEN"] #a2Word{color:var(--hold)}
-#a2Why{margin:0; font-size:.95rem}
-.h2sub{font-weight:400; color:var(--muted); font-size:.85rem}
-.tag{display:inline-block; font-size:.75rem; padding:2px 8px; border-radius:999px; background:var(--wait-soft); color:var(--muted); font-weight:600}
-@media (prefers-reduced-motion: reduce){ *{transition:none!important} }
+.actions{display:flex;gap:10px;margin:10px 0 14px}
+#err{display:none;margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--sell-bg);color:var(--ink)}
+.disclaimer{font-size:13px;color:var(--muted);margin-top:28px}
 </style>
 </head>
 <body>
@@ -125,108 +112,94 @@ details p{margin:10px 0 0; font-size:.92rem}
   <header>
     <div>
       <h1>BTC dagkaart</h1>
-      <div class="sub" id="stamp">Gegevens laden…</div>
+      <div id="stamp">Gegevens laden…</div>
     </div>
     <button id="refresh" type="button">Ververs</button>
   </header>
 
-  <div id="advice" data-k="">
-    <p id="adviceWord">…</p>
-    <p id="adviceWhy">De dagcandles worden opgehaald.</p>
-    <p id="adviceRisk"></p>
+  <div id="hero" data-k="">
+    <p id="word">…</p>
+    <p id="kind"></p>
+    <p id="why">De dagkoersen worden opgehaald.</p>
+    <p id="risk"></p>
   </div>
-
-  <div class="ruler" aria-label="Koers tussen verkoop- en koopniveau">
-    <div class="track"><div class="bar"></div><div class="pin" id="pin"><span id="pinLabel"></span></div></div>
-    <div class="ends">
-      <div>Verkoopniveau<b id="lvlSell">–</b><span>laagste slot 20 dagen</span></div>
-      <div class="r">Koopniveau<b id="lvlBuy">–</b><span>hoogste slot 55 dagen</span></div>
-    </div>
-    <p id="toLevel"></p>
-    <p id="preview"></p>
-  </div>
+  <p id="preview"></p>
 
   <div id="err"></div>
 
-
   <section>
-    <h2>Actieve regel: trend + dips <span class="h2sub">· ca. 1 signaal per maand</span></h2>
-    <div id="advice2" data-k="">
-      <p id="a2Word">…</p>
-      <p id="a2Why"></p>
-    </div>
-    <div class="rows" style="margin-top:10px">
-      <div class="row"><span class="k">Trend (EMA9/21 dag)</span><span class="v" id="a2Trend">–</span></div>
-      <div class="row"><span class="k">200-daags gemiddelde</span><span class="v" id="a2Sma">–</span></div>
-      <div class="row"><span class="k">Dip (RSI 2 dagen)</span><span class="v" id="a2Dip">–</span></div>
-      <div class="row"><span class="k">Verkoopniveau dip-trade</span><span class="v" id="a2Exit">–</span></div>
-    </div>
+    <h2>Wat nu</h2>
+    <div class="rows" id="steps"></div>
   </section>
 
   <section>
-    <h2>Lopende trade volgens de regel</h2>
-    <div class="rows" id="tradeRows">
-      <div class="row"><span class="k">Status</span><span class="v">–</span></div>
-    </div>
+    <h2>Waarom</h2>
+    <div class="rows" id="checks"></div>
+  </section>
+
+  <section id="tradeSec" hidden>
+    <h2>Lopende trade</h2>
+    <div class="rows" id="tradeRows"></div>
   </section>
 
   <section>
     <h2>Laatste 150 dagen</h2>
     <div class="chartwrap">
-      <svg id="chart" viewBox="0 0 360 190" role="img" aria-label="Koersgrafiek met koop- en verkoopniveau"></svg>
+      <svg id="chart" viewBox="0 0 360 190" role="img" aria-label="Slotkoers met 200-daags gemiddelde en koop- en verkoopmomenten"></svg>
       <div class="legend">
         <span><i style="background:var(--ink)"></i>Slotkoers</span>
-        <span><i style="background:var(--buy)"></i>Koopniveau</span>
-        <span><i style="background:var(--sell)"></i>Verkoopniveau</span>
-        <span>▲ koop · ▼ verkoop</span>
+        <span><i style="background:var(--muted)"></i>200-daags gemiddelde</span>
+        <span><b style="color:var(--buy)">▲</b> kopen &nbsp;<b style="color:var(--sell)">▼</b> verkopen</span>
       </div>
     </div>
   </section>
 
   <section>
-    <h2>Hoe de regel het deed</h2>
-    <div class="rows" id="trackRows"><div class="row"><span class="k">Bezig met rekenen</span><span class="v">–</span></div></div>
-    <p class="note" id="trackNote"></p>
+    <h2>Ter vergelijking</h2>
+    <div id="other">…</div>
   </section>
 
   <section>
-    <h2>Schaduwlog</h2>
-    <div class="rows" id="shadowRows"><div class="row"><span class="k">Nog geen gegevens</span><span class="v">–</span></div></div>
-    <p class="note">De app schrijft elke afgesloten dag op wat beide regels zeiden. Je hoeft niets te doen. Leg het naast je andere apps om te zien welke aanpak beter uitpakt.</p>
-    <div class="logwrap" style="margin-top:10px"><table id="logTable"><thead><tr><th>Dag</th><th class="n">Slot</th><th>Doorbraak</th><th>Trend+dips</th></tr></thead><tbody></tbody></table></div>
-    <div class="actions">
-      <button type="button" id="copyLog">Kopieer log</button>
-      <button type="button" id="resetLog">Wis log</button>
-    </div>
-  </section>
-
-  <section>
-    <h2>Zo werkt het</h2>
+    <h2>Achtergrond</h2>
     <details>
-      <summary>De regels</summary>
-      <p><b>Kopen</b> als BTC op een dag sluit op het hoogste slot van de laatste 55 dagen.</p>
-      <p><b>Verkopen</b> als BTC sluit op het laagste slot van de laatste 20 dagen.</p>
-      <p>Daartussen houd je vast of doe je niets. Er wordt niet geshort en niet met hefboom gewerkt. In de test vanaf 2018 waren shorts en hefboom de grootste verliesposten.</p>
-      <p>Een dag sluit om 00:00 UTC, dat is 01:00 (winter) of 02:00 (zomer) Nederlandse tijd. Het advies geldt dan voor de hele dag. Eén keer per dag kijken is genoeg.</p>
-      <p>Verwacht weinig trades, ongeveer 3 per jaar, en dat de regel vaker fout dan goed zit. De winst komt uit de paar grote trends. Dalingen van 30% of meer zijn in het verleden voorgekomen, ook met deze regel.</p>
-      <p><b>Actieve regel, trendsignaal:</b> kopen als de EMA9 boven de EMA21 komt en BTC boven het 200-daags gemiddelde sluit. Verkopen als de EMA9 weer onder de EMA21 zakt of de koers onder het 200-daags gemiddelde sluit.</p>
-      <p><b>Actieve regel, dipsignaal:</b> boven het 200-daags gemiddelde en de RSI over 2 dagen onder 15 (een korte, harde daling): kopen. Verkopen zodra BTC boven het 5-daags gemiddelde sluit, meestal na 2 tot 5 dagen.</p>
-      <p>De actieve regel geeft meer signalen dan de doorbraakregel, maar kende in de test ook grotere dalingen. Het schaduwlog laat zien welke regel bij jou beter uitpakt.</p>
-      <p>Tip: plaats een limietorder in plaats van een marktorder, dan betaal je bij Bitvavo de lagere makerfee.</p>
+      <summary>Hoe de regel het deed</summary>
+      <div id="trackRows"></div>
+      <p class="note" id="trackNote"></p>
+    </details>
+    <details>
+      <summary>Schaduwlog</summary>
+      <div id="shadowRows"></div>
+      <div class="logwrap"><table id="logTable"><thead><tr><th>Dag</th><th class="n">Slot</th><th>Trend + dips</th><th>Doorbraak</th></tr></thead><tbody></tbody></table></div>
+      <div class="actions">
+        <button type="button" id="copyLog">Kopieer log</button>
+        <button type="button" id="resetLog">Wis log</button>
+      </div>
+    </details>
+    <details>
+      <summary>Zo werkt de regel</summary>
+      <p>De app volgt één regel: <b>trend + dips</b>, op dagslotkoersen van BTC in euro. Geen shorts, geen hefboom.</p>
+      <p><b>Trendtrade.</b> Kopen als de EMA9 boven de EMA21 staat en BTC boven het 200-daags gemiddelde sluit. Verkopen als een van die twee wegvalt. Zo’n trade kan weken tot maanden duren.</p>
+      <p><b>Diptrade.</b> Kopen als BTC boven het 200-daags gemiddelde staat en in een paar dagen hard is gezakt (RSI over 2 dagen onder 15). Verkopen zodra BTC boven het 5-daags gemiddelde sluit, meestal na 2 tot 5 dagen. De korte trend hoeft daarvoor niet omhoog te staan; staat hij omlaag, dan meldt de app een hoger risico. De regel heeft geen stop: zakt BTC verder, dan blijft hij in.</p>
+      <p>Een dag sluit om 00:00 UTC, dat is 01:00 (winter) of 02:00 (zomer) Nederlandse tijd. Het advies geldt tot die tijd. Eén keer per dag kijken is genoeg.</p>
+      <p>De doorbraakregel (kopen op het hoogste slot van 55 dagen, verkopen op het laagste van 20) loopt alleen nog mee ter vergelijking, in het schaduwlog.</p>
+      <p>Tip: gebruik bij Bitvavo een limietorder in plaats van een marktorder, dan betaal je de lagere makerfee.</p>
     </details>
   </section>
+
+  <p class="disclaimer">Eigen hulpmiddel op basis van historische koersregels. Geen financieel advies; de regel zit vaker fout dan goed en verliesjaren komen voor.</p>
 </main>
 
 <script>
 (function(){
 "use strict";
-var BUY_N=55, SELL_N=20, COST=0.003;
+var BUY_N=55, SELL_N=20, COST=0.003, RSI_MAX=15, DAY=86400000;
 var LOG_KEY="btcdag_log", START_KEY="btcdag_start";
 var eur=new Intl.NumberFormat("nl-NL",{style:"currency",currency:"EUR",maximumFractionDigits:0});
-var pct=function(x,d){ if(x==null||!isFinite(x)) return "–"; var s=(x*100).toFixed(d==null?1:d).replace(".",","); return (x>0?"+":"")+s+"%"; };
-var $=function(id){return document.getElementById(id)};
-function dstr(t){ var d=new Date(t); return d.toLocaleDateString("nl-NL",{day:"numeric",month:"short",year:"numeric",timeZone:"UTC"}); }
+function pct(x,d){ if(x==null||!isFinite(x)) return "–"; var s=Math.abs(x*100).toFixed(d==null?1:d).replace(".",","); return (x>0?"+":x<0?"−":"")+s+"%"; }
+var $=function(id){return document.getElementById(id);};
+function dstr(t){ return new Date(t).toLocaleDateString("nl-NL",{day:"numeric",month:"long",timeZone:"UTC"}); }
 function dkey(t){ return new Date(t).toISOString().slice(0,10); }
+function esc(s){ return String(s).replace(/[&<>]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;"}[c];}); }
 
 /* ---------- data ---------- */
 function fetchJSON(url){
@@ -234,236 +207,261 @@ function fetchJSON(url){
 }
 function loadBinance(){
   return fetchJSON("https://api.binance.com/api/v3/klines?symbol=BTCEUR&interval=1d&limit=1000").then(function(a){
-    if(!Array.isArray(a)||a.length<BUY_N+5) throw new Error("Binance gaf te weinig candles");
-    return {src:"Binance",c:a.map(function(k){return {t:k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4]};})};
+    if(!Array.isArray(a)||a.length<230) throw new Error("Binance gaf te weinig dagen");
+    return {src:"Binance",c:a.map(function(k){return {t:k[0],c:+k[4]};})};
   });
 }
 function loadKraken(){
   return fetchJSON("https://api.kraken.com/0/public/OHLC?pair=XBTEUR&interval=1440").then(function(j){
     if(j.error&&j.error.length) throw new Error("Kraken: "+j.error.join(", "));
     var key=Object.keys(j.result).filter(function(k){return k!=="last";})[0];
-    var a=j.result[key];
-    return {src:"Kraken",c:a.map(function(k){return {t:k[0]*1000,o:+k[1],h:+k[2],l:+k[3],c:+k[4]};})};
+    return {src:"Kraken",c:j.result[key].map(function(k){return {t:k[0]*1000,c:+k[4]};})};
   });
 }
 
 /* ---------- rules (pure) ---------- */
 function ema(arr,n){ var k=2/(n+1), out=[], e=arr[0]; for(var i=0;i<arr.length;i++){ e=i?arr[i]*k+e*(1-k):arr[i]; out.push(e);} return out; }
-function donchianStates(cl){
-  var st=[], cur=0;
-  for(var i=0;i<cl.length;i++){
-    if(i<BUY_N-1){ st.push(null); continue; }
-    var hi=-Infinity, lo=Infinity;
-    for(var j=i-BUY_N+1;j<=i;j++) if(cl[j]>hi) hi=cl[j];
-    for(j=i-SELL_N+1;j<=i;j++) if(cl[j]<lo) lo=cl[j];
-    if(cur===0 && cl[i]>=hi) cur=1;
-    else if(cur===1 && cl[i]<=lo) cur=0;
-    st.push(cur);
-  }
-  return st;
-}
-function emaStates(cl){ var a=ema(cl,9), b=ema(cl,21); return cl.map(function(_,i){ return i<21?null:(a[i]>b[i]?1:0); }); }
 function sma(arr,n){ var out=[],s=0; for(var i=0;i<arr.length;i++){ s+=arr[i]; if(i>=n) s-=arr[i-n]; out.push(i>=n-1?s/n:null);} return out; }
-function rsiW(arr,n){ var out=[null],u=null,v=null,a=1/n;
+function rsiUV(arr,n){ var u=null,v=null,a=1/n, out=[null];
   for(var i=1;i<arr.length;i++){ var d=arr[i]-arr[i-1], up=d>0?d:0, dn=d<0?-d:0;
     if(u===null){u=up;v=dn;} else {u=a*up+(1-a)*u; v=a*dn+(1-a)*v;}
     out.push(v===0?100:100-100/(1+u/v)); }
-  return out; }
+  return {rsi:out,u:u,v:v}; }
 function trendDipStates(cl){
-  var a=ema(cl,9), b=ema(cl,21), s200=sma(cl,200), s5=sma(cl,5), r2=rsiW(cl,2);
+  var a=ema(cl,9), b=ema(cl,21), s200=sma(cl,200), s5=sma(cl,5), r2=rsiUV(cl,2).rsi;
   var trend=[], dip=[], pos=[], cur=0;
   for(var i=0;i<cl.length;i++){
     if(s200[i]===null||i<21){ trend.push(null); dip.push(null); pos.push(null); continue; }
     var t=(a[i]>b[i]&&cl[i]>s200[i])?1:0;
     if(cur===1&&cl[i]>s5[i]) cur=0;
-    if(cur===0&&r2[i]<15&&cl[i]>s200[i]) cur=1;
+    if(cur===0&&r2[i]<RSI_MAX&&cl[i]>s200[i]) cur=1;
     trend.push(t); dip.push(cur); pos.push(Math.max(t,cur));
   }
   return {pos:pos,trend:trend,dip:dip,s200:s200,s5:s5,r2:r2,ema9:a,ema21:b};
 }
-function levels(cl){ // levels that apply to the NEXT close
-  var n=cl.length, hi=-Infinity, lo=Infinity;
-  for(var j=n-(BUY_N-1);j<n;j++) if(cl[j]>hi) hi=cl[j];
+function donchianStates(cl){
+  var st=[], cur=0;
+  for(var i=0;i<cl.length;i++){
+    if(i<BUY_N-1){ st.push(null); continue; }
+    var hi=-Infinity, lo=Infinity, j;
+    for(j=i-BUY_N+1;j<=i;j++) if(cl[j]>hi) hi=cl[j];
+    for(j=i-SELL_N+1;j<=i;j++) if(cl[j]<lo) lo=cl[j];
+    if(cur===0&&cl[i]>=hi) cur=1; else if(cur===1&&cl[i]<=lo) cur=0;
+    st.push(cur);
+  }
+  return st;
+}
+function emaStates(cl){ var a=ema(cl,9), b=ema(cl,21); return cl.map(function(_,i){ return i<21?null:(a[i]>b[i]?1:0); }); }
+function donchianLevels(cl){ // levels for the NEXT close
+  var n=cl.length, hi=-Infinity, lo=Infinity, j;
+  for(j=n-(BUY_N-1);j<n;j++) if(cl[j]>hi) hi=cl[j];
   for(j=n-(SELL_N-1);j<n;j++) if(cl[j]<lo) lo=cl[j];
   return {buy:hi,sell:lo};
 }
-function simulate(cl,st,from){ // returns equity stats with costs
-  var eq=1, peak=1, dd=0, trades=[], cur=0, ep=0, hold0=cl[from];
+/* Price levels for the NEXT daily close of the active rule. */
+function nextLevels(cl,td){
+  var n=cl.length, k9=2/10, k21=2/22, j;
+  var e9=td.ema9[n-1], e21=td.ema21[n-1];
+  var xEma=((1-k21)*e21-(1-k9)*e9)/(k9-k21);          // EMA9 > EMA21 above this close
+  var s=0; for(j=n-199;j<n;j++) s+=cl[j]; var xSma=s/199; // close > SMA200 above this close
+  var dipExit=(cl[n-1]+cl[n-2]+cl[n-3]+cl[n-4])/4;        // close > SMA5 above this close
+  var uv=rsiUV(cl,2), prev=cl[n-1], r=RSI_MAX/(100-RSI_MAX), need=uv.u/r-uv.v;
+  var dipEntry= need>=0 ? prev-need : prev+r*uv.v-uv.u;   // RSI2 < 15 below this close
+  return {trend:Math.max(xEma,xSma), ema:xEma, sma200:xSma, dipExit:dipExit, dipEntry:dipEntry};
+}
+function verdict(prev,now){ return now===1?(prev===1?"VASTHOUDEN":"KOPEN"):(prev===1?"VERKOPEN":"NIETS DOEN"); }
+function simulate(cl,st,from){
+  var eq=1,peak=1,dd=0,trades=[],ep=cl[from];
   for(var i=from+1;i<cl.length;i++){
-    var p=st[i-1]||0;
-    if(p) eq*=cl[i]/cl[i-1];
+    var p=st[i-1]||0; if(p) eq*=cl[i]/cl[i-1];
     var nx=st[i]||0;
-    if(nx!==p){ eq*=(1-COST); if(nx===1){ep=cl[i];} else { trades.push(cl[i]/ep-1-2*COST);} }
+    if(nx!==p){ eq*=(1-COST); if(nx===1) ep=cl[i]; else trades.push(cl[i]/ep-1-2*COST); }
     if(eq>peak) peak=eq; if(eq/peak-1<dd) dd=eq/peak-1;
   }
-  var open=(st[cl.length-1]===1)?(cl[cl.length-1]/ep-1):null;
-  var hold=cl[cl.length-1]/hold0-1, hpk=cl[from], hdd=0;
-  for(i=from;i<cl.length;i++){ if(cl[i]>hpk) hpk=cl[i]; if(cl[i]/hpk-1<hdd) hdd=cl[i]/hpk-1; }
   var wins=trades.filter(function(x){return x>0;}).length;
-  return {ret:eq-1,dd:dd,trades:trades.length,wins:wins,open:open,hold:hold,hdd:hdd};
+  return {ret:eq-1,dd:dd,n:trades.length,win:trades.length?wins/trades.length:null};
+}
+function splitClosed(c,now){
+  var closed=c.filter(function(k){return k.t+DAY<=now;});
+  var last=c[c.length-1];
+  return {closed:closed, live:(last&&last.t+DAY>now)?last:null};
+}
+
+/* ---------- render helpers ---------- */
+function row(k,v,sub){ return '<div class="row"><span class="k">'+k+'</span><span class="v">'+v+(sub?'<small>'+sub+'</small>':'')+'</span></div>'; }
+function step(big,sub){ return '<div class="step"><p class="big">'+big+'</p>'+(sub?'<p class="sub">'+sub+'</p>':'')+'</div>'; }
+function check(state,title,sub){ var m={ok:"✓",no:"✗",na:"–"}[state]; return '<div class="check '+state+'"><span class="mark" aria-hidden="true">'+m+'</span><div><p>'+title+'</p>'+(sub?'<p class="sub">'+sub+'</p>':'')+'</div></div>'; }
+function rel(level,price){ return pct(level/price-1)+" van nu"; }
+function closeTimeNL(now){
+  var next=Math.floor(now/DAY)*DAY+DAY;
+  var d=new Date(next);
+  return d.toLocaleTimeString("nl-NL",{hour:"2-digit",minute:"2-digit",timeZone:"Europe/Amsterdam"})+" uur";
 }
 
 /* ---------- render ---------- */
 function render(data){
-  var all=data.c.slice().sort(function(a,b){return a.t-b.t;});
-  var now=Date.now(), dayMs=86400000;
-  var live=all[all.length-1];
-  var closed=all.filter(function(k){ return k.t+dayMs<=now; });
-  if(closed.length<BUY_N+5) throw new Error("Te weinig afgesloten dagen ontvangen.");
-  if(live.t+dayMs<=now) live=null;
-  var cl=closed.map(function(k){return k.c;}), n=cl.length, last=closed[n-1];
-  var st=donchianStates(cl), es=emaStates(cl), td=trendDipStates(cl);
-  var s=st[n-1], sp=st[n-2], e=es[n-1];
-  var lv=levels(cl);
-  var price=live?live.c:last.c;
+  var now=Date.now();
+  var sp=splitClosed(data.c,now), closed=sp.closed, cl=closed.map(function(k){return k.c;}), n=cl.length;
+  if(n<230) throw new Error("Te weinig dagkoersen ontvangen ("+n+").");
+  var price=sp.live?sp.live.c:cl[n-1];
+  var td=trendDipStates(cl), dc=donchianStates(cl), em=emaStates(cl);
+  var q0=td.pos[n-2], q1=td.pos[n-1], v=verdict(q0,q1);
+  var L=nextLevels(cl,td);
+  var T=td.trend[n-1], D=td.dip[n-1];
+  var shortUp=td.ema9[n-1]>td.ema21[n-1], bigUp=cl[n-1]>td.s200[n-1], r2=td.r2[n-1];
+  var lastDay=dstr(closed[n-1].t), validTo=closeTimeNL(now);
 
-  // advice
-  var k, why;
-  if(s===1&&sp===0){ k="KOPEN"; why="Gisteren sloot BTC op het hoogste punt van de laatste 55 dagen. Er is een nieuwe trend omhoog."; }
-  else if(s===0&&sp===1){ k="VERKOPEN"; why="Gisteren sloot BTC op het laagste punt van de laatste 20 dagen. De trend omhoog is voorbij."; }
-  else if(s===1){ k="VASTHOUDEN"; why="De trend omhoog loopt nog. Blijf in je positie zolang de koers boven het verkoopniveau sluit."; }
-  else { k="NIETS DOEN"; why="Er is geen trend omhoog. Wacht tot BTC sluit boven het koopniveau."; }
-  $("advice").dataset.k=k; $("adviceWord").textContent=k; $("adviceWhy").textContent=why;
-  var risk=$("adviceRisk"); risk.className="";
-  if(k==="KOPEN"&&e===0){ risk.textContent="Risico hoger: de EMA op de dagkaart wijst nog omlaag. Overweeg een kleinere positie."; risk.className="warn"; }
-  else if(k==="KOPEN"){ risk.textContent="Koop zonder hefboom. Reken erop dat ongeveer de helft van deze trades verlies geeft."; }
-  else if(k==="VASTHOUDEN"&&e===0){ risk.textContent="Let op: de EMA op de dagkaart is al omgeslagen. De trend verzwakt."; risk.className="warn"; }
-  else risk.textContent="";
+  $("stamp").textContent="Slot "+lastDay+" · "+data.src+" · "+new Date(now).toLocaleTimeString("nl-NL",{hour:"2-digit",minute:"2-digit"});
 
-  // ruler
-  var x=Math.max(0,Math.min(1,(price-lv.sell)/((lv.buy-lv.sell)||1)));
-  $("pin").style.left=(x*100)+"%"; var pl=$("pinLabel"); pl.textContent=eur.format(price);
-  pl.style.transform=x<0.18?"translateX(-12px)":(x>0.82?"translateX(calc(-100% + 12px))":"translateX(-50%)");
-  $("lvlSell").textContent=eur.format(lv.sell); $("lvlBuy").textContent=eur.format(lv.buy);
-  var to=$("toLevel");
-  if(s===1) to.textContent="Verkoopniveau ligt "+pct(lv.sell/price-1)+" van de koers van nu.";
-  else to.textContent="Koopniveau ligt "+pct(lv.buy/price-1)+" van de koers van nu.";
-  var pv=$("preview");
-  if(live){
-    if(s===0&&price>=lv.buy) pv.textContent="De koers staat nu boven het koopniveau. Sluit de dag zo, dan wordt het morgen KOPEN.";
-    else if(s===1&&price<=lv.sell) pv.textContent="De koers staat nu onder het verkoopniveau. Sluit de dag zo, dan wordt het morgen VERKOPEN.";
-    else pv.textContent="Vandaag telt pas mee na de dagsluiting om 00:00 UTC.";
-  } else pv.textContent="";
+  // what kind of trade is (or was) on
+  var entry=null;
+  if(q1===1){ var i=n-1; while(i>0&&td.pos[i-1]===1) i--; entry={i:i,price:cl[i],t:closed[i].t}; }
+  var kindNow = q1===1 ? (T===1?"trend":"dip") : null;
+  var kindPrev = q0===1 ? (td.trend[n-2]===1?"trend":"dip") : null;
 
-  $("stamp").textContent="Laatste dagsluiting "+dstr(last.t)+" · "+data.src;
-
-
-  // active rule
-  var P=td.pos, q1=P[n-1], q0=P[n-2], T=td.trend[n-1], Dp=td.dip[n-1], k2, w2;
-  if(q1===1&&q0===0){ k2="KOPEN"; w2=T===1?"Trendsignaal: de EMA9 staat boven de EMA21 en BTC sluit boven het 200-daags gemiddelde.":"Dipsignaal: BTC is in een stijgende markt kort hard gezakt. Dit is een korte trade van een paar dagen."; }
-  else if(q1===0&&q0===1){ k2="VERKOPEN"; w2=td.trend[n-2]===1?"De trend is omgeslagen: EMA9 onder EMA21 of koers onder het 200-daags gemiddelde.":"De dip is hersteld: BTC sloot boven het 5-daags gemiddelde. Neem de winst of het verlies."; }
-  else if(q1===1){ k2="VASTHOUDEN"; w2=T===1?"De trend loopt nog. Verkoop als de EMA9 onder de EMA21 zakt.":"Dip-trade loopt. Verkoop zodra BTC boven het 5-daags gemiddelde sluit."; }
-  else { k2="NIETS DOEN"; w2=cl[n-1]>td.s200[n-1]?"Geen trend en geen dip. Wacht op een EMA-kruising omhoog of een korte harde daling.":"BTC staat onder het 200-daags gemiddelde. De actieve regel doet dan niets."; }
-  $("advice2").dataset.k=k2; $("a2Word").textContent=k2; $("a2Why").textContent=w2;
-  $("a2Trend").textContent=td.ema9[n-1]>td.ema21[n-1]?"Omhoog":"Omlaag"; $("a2Trend").className="v "+(td.ema9[n-1]>td.ema21[n-1]?"pos":"neg");
-  var above=cl[n-1]>td.s200[n-1];
-  $("a2Sma").innerHTML=eur.format(td.s200[n-1])+' · <span class="'+(above?"pos":"neg")+'">'+(above?"koers erboven":"koers eronder")+"</span>";
-  $("a2Dip").textContent=td.r2[n-1].toFixed(0)+(td.r2[n-1]<15?" · dip!":" · geen dip");
-  $("a2Exit").textContent=(Dp===1&&T!==1)?"boven "+eur.format(td.s5[n-1]):"–";
-
-  // open trade
-  var tr=$("tradeRows");
-  if(s===1){
-    var i=n-1; while(i>0&&st[i-1]===1) i--;
-    var res=price/cl[i]-1;
-    tr.innerHTML=row("Gekocht volgens de regel",dstr(closed[i].t)+" (+1 dag)")+row("Instapkoers (slot)",eur.format(cl[i]))+
-      row("Resultaat nu",'<span class="'+(res>=0?"pos":"neg")+'">'+pct(res)+"</span>")+row("Dagen in de trade",String(n-i));
+  // hero
+  var hero=$("hero"); hero.setAttribute("data-k",v);
+  $("word").textContent=v;
+  var kindTxt="", why="", risk="";
+  if(v==="KOPEN"){
+    if(kindNow==="dip"){
+      kindTxt="Diptrade · meestal 2 tot 5 dagen";
+      why="BTC staat in een stijgende markt en is de afgelopen dagen hard gezakt. Kopen op zo’n dip, verkopen zodra hij hersteld is.";
+      if(!shortUp) risk="<b>Risico hoger.</b> De korte trend wijst nog omlaag, dus BTC kan eerst verder zakken. De regel heeft geen stop.";
+    } else {
+      kindTxt="Trendtrade · weken tot maanden";
+      why="De korte trend draait omhoog en BTC staat boven het 200-daags gemiddelde. Instappen en meeliften zolang de trend aanhoudt.";
+    }
+  } else if(v==="VASTHOUDEN"){
+    kindTxt=(kindNow==="dip"?"Diptrade":"Trendtrade")+" · in sinds "+dstr(entry.t);
+    why=kindNow==="dip"?"De dip is nog niet hersteld. Blijf in BTC tot het verkoopsignaal komt.":"De trend is intact. Blijf in BTC tot de trend wegvalt.";
+    if(kindNow==="dip"&&!shortUp) risk="<b>Risico hoger.</b> De korte trend wijst nog omlaag. De regel heeft geen stop.";
+  } else if(v==="VERKOPEN"){
+    kindTxt=kindPrev==="dip"?"Diptrade afgesloten":"Trendtrade afgesloten";
+    why=kindPrev==="dip"?"De dip is hersteld: BTC sloot boven het 5-daags gemiddelde. Verkopen en wachten op het volgende signaal.":"De trend is weggevallen. Verkopen en wachten op het volgende signaal.";
   } else {
-    var j=n-1; while(j>0&&st[j-1]===0) j--;
-    tr.innerHTML=row("Status","Geen trade, in euro's")+row("Laatste verkoopdag",j>BUY_N?dstr(closed[j].t):"–");
+    kindTxt="Geen positie";
+    why=bigUp?"De grote trend is omhoog, maar er is nu geen dip om te kopen en geen nieuwe trend. Wachten.":"BTC staat onder het 200-daags gemiddelde. Dan blijft de regel buiten de markt, ook bij dips.";
   }
+  $("kind").textContent=kindTxt;
+  $("why").textContent=why;
+  var rk=$("risk"); rk.innerHTML=risk; rk.style.display=risk?"block":"none";
 
-  // chart
-  drawChart(closed,st);
+  // preview: what if today closed at the current price
+  var p2=trendDipStates(cl.concat([price])).pos[n];
+  var nv=verdict(q1,p2), pv="";
+  if(sp.live){
+    pv="Sluit BTC vandaag op de huidige "+eur.format(price)+", dan is het advies morgen <b>"+nv.toLowerCase()+"</b>.";
+    if(v==="KOPEN"&&nv==="VERKOPEN") pv+=" De dip is vandaag al hersteld, dus instappen levert nu weinig meer op.";
+  }
+  $("preview").innerHTML=pv;
 
-  // track record
-  var from=Math.max(BUY_N,21);
-  var from2=Math.max(from,200);
-  var sd=simulate(cl,st,from2), sa=simulate(cl,td.pos,from2); from=from2;
-  var yrs=(closed[n-1].t-closed[from].t)/(365.25*dayMs);
-  $("trackRows").innerHTML=
-    row("Doorbraakregel, totaal",'<span class="'+(sd.ret>=0?"pos":"neg")+'">'+pct(sd.ret,0)+"</span>")+
-    row("Doorbraakregel, grootste daling",pct(sd.dd,0))+
-    row("Afgesloten trades",sd.trades+" ("+sd.wins+" met winst)")+
-    row("Trend + dips, totaal",'<span class="'+(sa.ret>=0?"pos":"neg")+'">'+pct(sa.ret,0)+"</span> · "+sa.trades+" trades")+
-    row("Trend + dips, grootste daling",pct(sa.dd,0))+
-    row("Alleen vasthouden",'<span class="'+(sd.hold>=0?"pos":"neg")+'">'+pct(sd.hold,0)+"</span> · daling "+pct(sd.hdd,0));
-  $("trackNote").textContent="Over de laatste "+yrs.toFixed(1).replace(".",",")+" jaar die "+data.src+" levert, sinds "+dstr(closed[from].t)+". Inclusief 0,30% kosten per aan- of verkoop. Het verleden is geen garantie.";
+  // steps
+  var s="";
+  if(v==="KOPEN"||v==="VASTHOUDEN"){
+    if(v==="KOPEN") s+=step("Kopen rond "+eur.format(price),"Huidige koers. Het advies geldt tot "+validTo+".");
+    if(T===1&&D===1){
+      s+=step("Verkopen als de trend wegvalt","Dat is bij een slot onder "+eur.format(L.trend)+" ("+rel(L.trend,price)+"), en pas als de dip ook hersteld is.");
+    } else if(kindNow==="dip"){
+      s+=step("Verkopen bij slot boven "+eur.format(L.dipExit),rel(L.dipExit,price)+". Dat is het 5-daags gemiddelde van morgen.");
+    } else {
+      s+=step("Verkopen bij slot onder "+eur.format(L.trend),rel(L.trend,price)+". Daaronder valt de trend weg.");
+    }
+    if(v==="VASTHOUDEN"){
+      var late = kindNow==="dip" && price>L.dipExit;
+      s+=step("Nog niet gekocht?", late?"Niet meer instappen: de koers staat al boven het verkoopniveau van deze diptrade.":"Instappen kan nog, de regel zit in BTC. Je instapprijs is dan wel anders dan die van de regel.");
+    }
+  } else {
+    if(v==="VERKOPEN") s+=step("Verkopen rond "+eur.format(price),"Huidige koers. Het advies geldt tot "+validTo+".");
+    var dipPossible=L.dipEntry>L.sma200;
+    s+=step(dipPossible?"Diptrade bij slot onder "+eur.format(L.dipEntry):"Geen diptrade mogelijk",
+      dipPossible?rel(L.dipEntry,price)+". Daar komt de RSI(2) onder 15, zolang BTC boven "+eur.format(L.sma200)+" blijft.":"Daarvoor moet BTC eerst boven het 200-daags gemiddelde van "+eur.format(L.sma200)+" sluiten.");
+    s+=step("Trendtrade bij slot boven "+eur.format(L.trend),rel(L.trend,price)+". Daar komt de EMA9 boven de EMA21"+(L.sma200>L.ema?" en BTC boven het 200-daags gemiddelde":"")+".");
+  }
+  $("steps").innerHTML=s;
 
-  // shadow log
-  updateShadow(closed,st,es,td.pos);
+  // checks
+  var c="";
+  c+=check(bigUp?"ok":"no","Grote trend "+(bigUp?"omhoog":"omlaag"),"Slot "+eur.format(cl[n-1])+" ligt "+(bigUp?"boven":"onder")+" het 200-daags gemiddelde van "+eur.format(td.s200[n-1])+". Zonder dit doet de regel niets.");
+  c+=check(shortUp?"ok":"no","Korte trend "+(shortUp?"omhoog":"omlaag"),"EMA9 "+eur.format(td.ema9[n-1])+" ligt "+(shortUp?"boven":"onder")+" EMA21 "+eur.format(td.ema21[n-1])+". Nodig voor een trendtrade; bij een diptrade bepaalt dit alleen het risico.");
+  var isDip=r2<RSI_MAX;
+  c+=check(isDip?"ok":"na",isDip?"Harde dip":"Geen dip","RSI over 2 dagen is "+Math.round(r2)+". Onder 15 telt als dip.");
+  $("checks").innerHTML=c;
 
+  // trade
+  if(entry&&v!=="KOPEN"){
+    var res=price/entry.price-1;
+    $("tradeRows").innerHTML=row("Ingestapt",eur.format(entry.price),dstr(entry.t))+row("Koers nu",eur.format(price))+row("Resultaat",pct(res),"zonder kosten");
+    $("tradeSec").hidden=false;
+  } else $("tradeSec").hidden=true;
+
+  // other rule
+  var DL=donchianLevels(cl), dIn=dc[n-1]===1;
+  $("other").innerHTML="De doorbraakregel 55/20 "+(dIn?"zit <b>in BTC</b> en verkoopt bij een slot onder "+eur.format(DL.sell)+".":"zit <b>niet in BTC</b> en koopt pas bij een slot boven "+eur.format(DL.buy)+" ("+rel(DL.buy,price)+").")+" Je handelt hier niet op; hij loopt mee in het schaduwlog.";
+
+  drawChart(closed,cl,td);
+  track(cl,td,dc,closed);
+  updateShadow(closed,dc,em,td);
 }
-function row(k,v){ return '<div class="row"><span class="k">'+k+'</span><span class="v">'+v+"</span></div>"; }
 
-function drawChart(closed,st){
-  var N=Math.min(150,closed.length-BUY_N), off=closed.length-N, svg=$("chart");
-  var W=360,H=190,P={l:4,r:4,t:10,b:18};
-  var cl=closed.map(function(k){return k.c;});
-  var buyL=[],sellL=[],pts=[];
-  for(var i=off;i<closed.length;i++){
-    var hi=-Infinity,lo=Infinity;
-    for(var j=i-(BUY_N-1);j<i;j++) if(cl[j]>hi) hi=cl[j];
-    for(j=i-(SELL_N-1);j<i;j++) if(cl[j]<lo) lo=cl[j];
-    buyL.push(hi); sellL.push(lo); pts.push(cl[i]);
-  }
-  var mn=Math.min.apply(null,sellL.concat(pts)), mx=Math.max.apply(null,buyL.concat(pts));
-  var xs=function(i){return P.l+i*(W-P.l-P.r)/(N-1);}, ys=function(v){return P.t+(mx-v)*(H-P.t-P.b)/((mx-mn)||1);};
-  var path=function(a){return a.map(function(v,i){return (i?"L":"M")+xs(i).toFixed(1)+" "+ys(v).toFixed(1);}).join(" ");};
+function drawChart(closed,cl,td){
+  var svg=$("chart"), W=360,H=190,P={l:6,r:6,t:10,b:20}, N=Math.min(150,cl.length), off=cl.length-N, i;
+  var pts=cl.slice(off), ma=td.s200.slice(off), st=td.pos;
+  var all=pts.concat(ma.filter(function(x){return x!=null;}));
+  var mn=Math.min.apply(null,all), mx=Math.max.apply(null,all), pad=(mx-mn)*0.06; mn-=pad; mx+=pad;
+  var xs=function(i){return P.l+i*(W-P.l-P.r)/(N-1);}, ys=function(v){return P.t+(mx-v)*(H-P.t-P.b)/(mx-mn);};
+  var path=function(a){ var d="",pen=false; for(var i=0;i<a.length;i++){ if(a[i]==null){pen=false;continue;} d+=(pen?"L":"M")+xs(i).toFixed(1)+" "+ys(a[i]).toFixed(1)+" "; pen=true;} return d; };
   var marks="";
   for(i=1;i<N;i++){
     var a=st[off+i-1],b=st[off+i];
-    if(a===0&&b===1) marks+='<text x="'+xs(i).toFixed(1)+'" y="'+(ys(pts[i])+14).toFixed(1)+'" text-anchor="middle" font-size="11" fill="var(--buy)">▲</text>';
+    if(a===0&&b===1) marks+='<text x="'+xs(i).toFixed(1)+'" y="'+(ys(pts[i])+15).toFixed(1)+'" text-anchor="middle" font-size="11" fill="var(--buy)">▲</text>';
     if(a===1&&b===0) marks+='<text x="'+xs(i).toFixed(1)+'" y="'+(ys(pts[i])-6).toFixed(1)+'" text-anchor="middle" font-size="11" fill="var(--sell)">▼</text>';
   }
-  var lab=function(i){var d=new Date(closed[off+i].t);return d.toLocaleDateString("nl-NL",{month:"short",timeZone:"UTC"});};
-  svg.innerHTML=
-    '<path d="'+path(buyL)+'" fill="none" stroke="var(--buy)" stroke-width="1.4" stroke-dasharray="4 3"/>'+
-    '<path d="'+path(sellL)+'" fill="none" stroke="var(--sell)" stroke-width="1.4" stroke-dasharray="4 3"/>'+
+  var lab=function(i){return new Date(closed[off+i].t).toLocaleDateString("nl-NL",{month:"short",timeZone:"UTC"});};
+  svg.innerHTML='<path d="'+path(ma)+'" fill="none" stroke="var(--muted)" stroke-width="1.4" stroke-dasharray="4 3"/>'+
     '<path d="'+path(pts)+'" fill="none" stroke="var(--ink)" stroke-width="1.8" stroke-linejoin="round"/>'+marks+
     '<text x="'+P.l+'" y="'+(H-4)+'" font-size="10" fill="var(--muted)">'+lab(0)+'</text>'+
     '<text x="'+(W/2)+'" y="'+(H-4)+'" font-size="10" fill="var(--muted)" text-anchor="middle">'+lab(Math.floor(N/2))+'</text>'+
     '<text x="'+(W-P.r)+'" y="'+(H-4)+'" font-size="10" fill="var(--muted)" text-anchor="end">'+lab(N-1)+'</text>';
 }
 
+function track(cl,td,dc,closed){
+  var from=200, a=simulate(cl,td.pos,from), b=simulate(cl,dc,from), hold=cl[cl.length-1]/cl[from]-1;
+  $("trackRows").innerHTML='<div class="rows" style="margin:8px 0">'+
+    row("Trend + dips",pct(a.ret,0),"grootste daling "+pct(a.dd,0)+" · "+a.n+" trades, "+(a.win==null?"–":Math.round(a.win*100)+"%")+" winst")+
+    row("Doorbraak 55/20",pct(b.ret,0),"grootste daling "+pct(b.dd,0)+" · "+b.n+" trades")+
+    row("Alleen vasthouden",pct(hold,0))+'</div>';
+  $("trackNote").textContent="Van "+dstr(closed[from].t)+" "+new Date(closed[from].t).getUTCFullYear()+" tot nu, inclusief 0,3% kosten per aan- of verkoop. De eerste 200 dagen zijn nodig om het gemiddelde op te bouwen. Het verleden is geen garantie.";
+}
 
-
-/* ---------- shadow log ---------- */
+/* ---------- shadow log (same storage keys as before, history is kept) ---------- */
 function readLog(){ try{ return JSON.parse(localStorage.getItem(LOG_KEY)||"[]"); }catch(e){ return []; } }
 function writeLog(l){ try{ localStorage.setItem(LOG_KEY,JSON.stringify(l)); }catch(e){} }
-function updateShadow(closed,st,es,tp){
-  var log=readLog(), start=null;
+function updateShadow(closed,dc,em,td){
+  var log=readLog(), start=null, n=closed.length;
   try{ start=localStorage.getItem(START_KEY); }catch(e){}
-  var n=closed.length;
   if(!start){ start=dkey(closed[n-1].t); try{ localStorage.setItem(START_KEY,start); }catch(e){} }
-  var have={}, idx={}; closed.forEach(function(k,i){ idx[dkey(k.t)]=i; });
-  log.forEach(function(r){ have[r.d]=1; if(r.td==null&&idx[r.d]!=null) r.td=tp[idx[r.d]]; });
+  var have={}; log.forEach(function(r){have[r.d]=r;});
   for(var i=0;i<n;i++){
     var d=dkey(closed[i].t);
-    if(d<start||have[d]) continue;
-    log.push({d:d,c:Math.round(closed[i].c),dc:st[i],em:es[i],td:tp[i]});
+    if(d<start) continue;
+    if(have[d]){ if(have[d].td==null&&td.pos[i]!=null) have[d].td=td.pos[i]; continue; }
+    log.push({d:d,c:Math.round(closed[i].c),dc:dc[i],em:em[i],td:td.pos[i]});
   }
   log.sort(function(a,b){return a.d<b.d?-1:1;});
   writeLog(log);
-
-  // virtual results since start
-  function res(key){
-    var eq=1,cur=0;
-    for(var i=1;i<log.length;i++){ if(log[i-1][key]===1) eq*=log[i].c/log[i-1].c; if(log[i][key]!==log[i-1][key]) eq*=(1-COST); }
-    return eq-1;
-  }
-  var days=log.length;
-  var hold=days>1?log[days-1].c/log[0].c-1:0;
-  $("shadowRows").innerHTML=row("Loopt sinds",start.split("-").reverse().join("-"))+row("Dagen gelogd",String(days))+
-    (days>1? row("Doorbraakregel",pct(res("dc")))+row("Trend + dips",pct(res("td")))+row("Alleen vasthouden",pct(hold)) : row("Resultaten","vanaf de tweede dag"));
-  var tb=$("logTable").tBodies[0], h="";
+  function res(key){ var eq=1; for(var i=1;i<log.length;i++){ if(log[i-1][key]===1) eq*=log[i].c/log[i-1].c; if((log[i][key]||0)!==(log[i-1][key]||0)) eq*=(1-COST);} return eq-1; }
+  var days=log.length, hold=days>1?log[days-1].c/log[0].c-1:0;
+  $("shadowRows").innerHTML='<div class="rows" style="margin:8px 0">'+row("Loopt sinds",start.split("-").reverse().join("-"),days+" dagen gelogd")+
+    (days>1?row("Trend + dips",pct(res("td")))+row("Doorbraak 55/20",pct(res("dc")))+row("Alleen vasthouden",pct(hold)):row("Resultaten","vanaf de tweede dag"))+'</div>';
+  var h="";
   log.slice(-30).reverse().forEach(function(r){
-    h+="<tr><td>"+r.d.slice(8,10)+"-"+r.d.slice(5,7)+"</td><td class='n'>"+eur.format(r.c)+"</td><td>"+(r.dc?"in":"uit")+"</td><td>"+(r.td?"in":"uit")+"</td></tr>";
+    h+="<tr><td>"+r.d.slice(8,10)+"-"+r.d.slice(5,7)+"</td><td class='n'>"+eur.format(r.c)+"</td><td>"+(r.td==null?"–":r.td?"in":"uit")+"</td><td>"+(r.dc?"in":"uit")+"</td></tr>";
   });
-  tb.innerHTML=h||"<tr><td colspan='4'>Nog niets gelogd</td></tr>";
+  $("logTable").tBodies[0].innerHTML=h||"<tr><td colspan='4'>Nog niets gelogd</td></tr>";
 }
 $("copyLog").addEventListener("click",function(){
-  var txt="datum;slot;doorbraak;trend+dips;ema\n"+readLog().map(function(r){return r.d+";"+r.c+";"+(r.dc?"in":"uit")+";"+(r.td?"in":"uit")+";"+(r.em?"omhoog":"omlaag");}).join("\n");
+  var txt="datum;slot;doorbraak;trend+dips;ema\n"+readLog().map(function(r){return r.d+";"+r.c+";"+(r.dc?"in":"uit")+";"+(r.td==null?"":r.td?"in":"uit")+";"+(r.em?"omhoog":"omlaag");}).join("\n");
   var b=this;
   (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(function(){b.textContent="Gekopieerd";setTimeout(function(){b.textContent="Kopieer log";},1800);},
     function(){ window.prompt("Kopieer de log:",txt); });
@@ -480,14 +478,14 @@ function load(){
   if(busy) return; busy=true;
   var err=$("err"); err.style.display="none";
   $("refresh").textContent="Laden…";
-  loadBinance().catch(function(e1){ return loadKraken().catch(function(e2){ throw new Error("Binance en Kraken zijn allebei niet bereikbaar. Controleer je verbinding en tik op Ververs. ("+e1.message+")"); }); })
+  loadBinance().catch(function(e1){ return loadKraken().catch(function(){ throw new Error("Binance en Kraken zijn allebei niet bereikbaar. Controleer je verbinding en tik op Ververs. ("+e1.message+")"); }); })
     .then(render)
     .catch(function(e){ err.textContent=e.message; err.style.display="block"; })
     .then(function(){ busy=false; $("refresh").textContent="Ververs"; });
 }
 $("refresh").addEventListener("click",load);
 document.addEventListener("visibilitychange",function(){ if(document.visibilityState==="visible") load(); });
-window.__btcdag={trendDipStates:trendDipStates,donchianStates:donchianStates,emaStates:emaStates,levels:levels,simulate:simulate};
+window.__btcdag={trendDipStates:trendDipStates,donchianStates:donchianStates,nextLevels:nextLevels,verdict:verdict,simulate:simulate};
 load();
 })();
 </script>
