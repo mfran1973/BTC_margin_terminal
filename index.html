@@ -245,17 +245,49 @@ function esc(s){ return String(s).replace(/[&<>]/g,function(c){return {"&":"&amp
 function fetchJSON(url){
   return fetch(url,{cache:"no-store"}).then(function(r){ if(!r.ok) throw new Error(url+" gaf status "+r.status); return r.json(); });
 }
-function loadBinance(){
-  return fetchJSON("https://api.binance.com/api/v3/klines?symbol=BTCEUR&interval=1d&limit=1000").then(function(a){
-    if(!Array.isArray(a)||a.length<230) throw new Error("Binance gaf te weinig dagen");
-    return {src:"Binance",c:a.map(function(k){return {t:k[0],c:+k[4]};})};
+/* Daily candles, oldest first, as {t,c}. Rejects data that is stale. */
+function clean(src,arr){
+  var seen={}, c=[];
+  arr.forEach(function(k){ if(isFinite(k.t)&&isFinite(k.c)&&k.c>0&&!seen[k.t]){ seen[k.t]=1; c.push(k); } });
+  c.sort(function(a,b){return a.t-b.t;});
+  if(c.length<230) throw new Error(src+" gaf te weinig dagen");
+  var age=Date.now()-c[c.length-1].t;
+  if(age>2*DAY) throw new Error(src+" geeft verouderde koersen (laatste dag "+dstr(c[c.length-1].t)+")");
+  return {src:src,c:c};
+}
+function loadBitvavo(){
+  return fetchJSON("https://api.bitvavo.com/v2/BTC-EUR/candles?interval=1d&limit=1000").then(function(a){
+    if(!Array.isArray(a)) throw new Error("Bitvavo gaf geen koersen");
+    return clean("Bitvavo",a.map(function(k){return {t:+k[0],c:+k[4]};}));
   });
 }
 function loadKraken(){
   return fetchJSON("https://api.kraken.com/0/public/OHLC?pair=XBTEUR&interval=1440").then(function(j){
     if(j.error&&j.error.length) throw new Error("Kraken: "+j.error.join(", "));
     var key=Object.keys(j.result).filter(function(k){return k!=="last";})[0];
-    return {src:"Kraken",c:j.result[key].map(function(k){return {t:k[0]*1000,c:+k[4]};})};
+    return clean("Kraken",j.result[key].map(function(k){return {t:k[0]*1000,c:+k[4]};}));
+  });
+}
+function loadBinance(){
+  return fetchJSON("https://api.binance.com/api/v3/klines?symbol=BTCEUR&interval=1d&limit=1000").then(function(a){
+    if(!Array.isArray(a)) throw new Error("Binance gaf geen koersen");
+    return clean("Binance",a.map(function(k){return {t:+k[0],c:+k[4]};}));
+  });
+}
+/* Current price from a second exchange, to check the first one. */
+function checkPrice(src){
+  if(src!=="Bitvavo") return fetchJSON("https://api.bitvavo.com/v2/ticker/price?market=BTC-EUR").then(function(j){ return {src:"Bitvavo",p:+j.price}; });
+  return fetchJSON("https://api.kraken.com/0/public/Ticker?pair=XBTEUR").then(function(j){ var k=Object.keys(j.result)[0]; return {src:"Kraken",p:+j.result[k].c[0]}; });
+}
+function loadAll(){
+  var errs=[];
+  function tryNext(list){
+    if(!list.length) return Promise.reject(new Error("Geen koersbron bereikbaar. Controleer je verbinding en tik op Ververs. ("+errs.join("; ")+")"));
+    return list[0][1]().catch(function(e){ errs.push(e.message.indexOf(list[0][0])===0?e.message:list[0][0]+" niet bereikbaar"); return tryNext(list.slice(1)); });
+  }
+  return tryNext([["Bitvavo",loadBitvavo],["Kraken",loadKraken],["Binance",loadBinance]]).then(function(d){
+    d.skipped=errs;
+    return checkPrice(d.src).then(function(x){ d.check=x; return d; },function(){ return d; });
   });
 }
 
@@ -378,8 +410,15 @@ function render(data){
   // price header
   var chg=price/cl[n-1]-1;
   $("priceNow").textContent=eur.format(price);
-  $("priceSub").innerHTML='<b class="'+cls(chg)+'">'+pct(chg)+'</b> sinds het dagslot van '+eur.format(cl[n-1])+' · '+new Date(now).toLocaleTimeString("nl-NL",{hour:"2-digit",minute:"2-digit"});
-  $("stamp").textContent="Bron: "+data.src+". Laatste afgesloten dag: "+dstr(closed[n-1].t)+". De koers ververst elke minuut.";
+  var chk="";
+  if(data.check&&data.check.p>0){
+    var dev=price/data.check.p-1;
+    chk=Math.abs(dev)>0.01
+      ? '<br><b class="down">Let op: '+data.check.src+' zegt '+eur.format(data.check.p)+', '+pct(data.check.p/price-1)+' anders. De koers hierboven klopt mogelijk niet.</b>'
+      : '<br>Gecontroleerd met '+data.check.src+': '+eur.format(data.check.p)+'.';
+  }
+  $("priceSub").innerHTML='<b class="'+cls(chg)+'">'+pct(chg)+'</b> sinds het dagslot · koers van '+data.src+', '+new Date(now).toLocaleTimeString("nl-NL",{hour:"2-digit",minute:"2-digit"})+chk;
+  $("stamp").textContent="Koersen van "+data.src+(data.skipped&&data.skipped.length?" (overgeslagen: "+data.skipped.join("; ")+")":"")+". Laatste afgesloten dag: "+dstr(closed[n-1].t)+". De koers ververst elke minuut.";
 
   // the rule's own trade
   var entry=null;
@@ -626,7 +665,7 @@ function load(quiet){
   if(busy) return; busy=true;
   var err=$("err"); err.style.display="none";
   if(!quiet) $("refresh").textContent="Laden…";
-  loadBinance().catch(function(e1){ return loadKraken().catch(function(){ throw new Error("Binance en Kraken zijn allebei niet bereikbaar. Controleer je verbinding en tik op Ververs. ("+e1.message+")"); }); })
+  loadAll()
     .then(function(d){ lastData=d; render(d); })
     .catch(function(e){ err.textContent=e.message; err.style.display="block"; })
     .then(function(){ busy=false; $("refresh").textContent="Ververs"; });
